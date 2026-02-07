@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Cassettiera</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 8px solid #2ecc71; position: relative; }
+        .card.sottoscorta { border-left-color: #e74c3c; background: #fff5f5; }
+        .qty { position: absolute; top: 20px; right: 20px; font-size: 24px; font-weight: bold; }
+        button { padding: 12px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; }
+        .btn-preleva { background: #3498db; color: white; width: 100%; font-size: 16px; margin-top: 10px; }
+        .storico-box { background: white; padding: 15px; border-radius: 12px; margin-top: 40px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+        th { background: #eee; }
+        .badge-allerta { color: #e74c3c; font-weight: bold; animation: lampeggia 1s infinite; }
+        @keyframes lampeggia { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📦 Magazzino Utensili</h1>
+    
+    <div id="lista-utensili">Caricamento...</div>
+
+    <div class="storico-box">
+        <h3>📋 Ultimi Prelievi</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Chi</th>
+                    <th>Articolo</th>
+                    <th>Q.tà</th>
+                </tr>
+            </thead>
+            <tbody id="corpo-storico"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // INSERISCI QUI I TUOI DATI
+    const S_URL = "https://yaflecdmyvamveenzfph.supabase.co";
+    const S_KEY = "sb_publishable_YUNFFby__QxMgl4d_LdLvw_MS7IPGRV";
+    const supabaseClient = supabase.createClient(S_URL, S_KEY);
+
+    async function inizializza() {
+        await caricaDati();
+        await caricaStorico();
+    }
+
+    async function caricaDati() {
+        const { data } = await supabaseClient.from('utensili').select('*').order('desc');
+        const div = document.getElementById('lista-utensili');
+        div.innerHTML = "";
+        
+        data.forEach(u => {
+            const isLow = u.qty <= u.min;
+            div.innerHTML += `
+                <div class="card ${isLow ? 'sottoscorta' : ''}">
+                    <div class="qty" style="color: ${isLow ? '#e74c3c' : '#2ecc71'}">${u.qty}</div>
+                    <h2>${u.desc}</h2>
+                    <p>Cod. Interno: <b>${u.cod_int}</b></p>
+                    ${isLow ? '<p class="badge-allerta">⚠️ SOTTOSCORTA - ORDINARE!</p>' : ''}
+                    <button class="btn-preleva" onclick="preleva(${u.id}, '${u.desc}', ${u.qty})">PRELEVA UTENSILE</button>
+                </div>`;
+        });
+    }
+
+    async function caricaStorico() {
+        const { data } = await supabaseClient.from('log_movimenti').select('*').order('data', { ascending: false }).limit(10);
+        const corpo = document.getElementById('corpo-storico');
+        corpo.innerHTML = data.map(l => `
+            <tr>
+                <td>${new Date(l.data).toLocaleDateString()} ${new Date(l.data).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                <td>${l.operatore}</td>
+                <td>${l.articolo}</td>
+                <td>-${l.quantita}</td>
+            </tr>
+        `).join('');
+    }
+
+    async function preleva(id, descrizione, attuale) {
+        const nome = prompt("Inserisci il tuo nome:");
+        if (!nome) return;
+        
+        const qtaStr = prompt("Quanti pezzi prendi?");
+        const qta = parseInt(qtaStr);
+
+        if (isNaN(qta) || qta <= 0 || qta > attuale) {
+            alert("Quantità non valida!");
+            return;
+        }
+
+        // 1. Aggiorna giacenza
+        await supabaseClient.from('utensili').update({ qty: attuale - qta }).eq('id', id);
+
+        // 2. Scrivi nello storico
+        await supabaseClient.from('log_movimenti').insert([{
+            operatore: nome,
+            articolo: descrizione,
+            quantita: qta
+        }]);
+
+        alert("Prelievo registrato!");
+        inizializza();
+    }
+
+    inizializza();
+</script>
+
+</body>
+</html>
