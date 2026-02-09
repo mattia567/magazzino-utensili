@@ -3,43 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Officina v4</title>
+    <title>Magazzino Officina v5</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #3498db; --danger: #e74c3c; --success: #2ecc71; --dark: #2c3e50; }
         body { font-family: sans-serif; background: #f4f7f6; padding: 15px; margin: 0; }
-        .header { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        /* Header e Ricerca fissi in alto */
+        .sticky-header { position: sticky; top: 0; z-index: 100; background: #f4f7f6; padding-bottom: 10px; }
+        .header { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         input#cerca { width: 100%; padding: 15px; border: 2px solid var(--primary); border-radius: 8px; font-size: 18px; box-sizing: border-box; }
-        .cassetto-header { background: var(--dark); color: white; padding: 10px 15px; border-radius: 6px; margin-top: 25px; font-weight: bold; text-transform: uppercase; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 10px; }
-        .card { background: white; border-radius: 10px; padding: 15px; position: relative; border-left: 8px solid var(--success); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .card.sottoscorta { border-left-color: var(--danger); background: #fff8f8; }
-        .qty-badge { position: absolute; top: 15px; right: 15px; font-size: 24px; font-weight: bold; }
-        .actions { display: flex; gap: 10px; margin-top: 15px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; color: white; cursor: pointer; }
+
+        /* Cassetti Richiudibili */
+        .cassetto-wrapper { margin-top: 10px; border-radius: 8px; overflow: hidden; background: white; border: 1px solid #ddd; }
+        .cassetto-header { background: var(--dark); color: white; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .cassetto-header::after { content: '▼'; font-size: 0.8rem; }
+        .cassetto-header.active::after { content: '▲'; }
+        .cassetto-content { display: none; padding: 10px; background: #fafafa; }
+        .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+
+        /* Card Utensile */
+        .card { background: white; border-radius: 8px; padding: 12px; position: relative; border-left: 6px solid var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .card.sottoscorta { border-left-color: var(--danger); }
+        .qty-badge { position: absolute; top: 10px; right: 10px; font-size: 20px; font-weight: bold; }
+        .actions { display: flex; gap: 8px; margin-top: 10px; }
+        button { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; color: white; cursor: pointer; font-size: 14px; }
         .btn-preleva { background: var(--primary); }
         .btn-carica { background: var(--success); }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; border-radius: 10px; overflow: hidden; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+
+        /* Modal Foto (Pop-up) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 10px; border-radius: 10px; max-width: 90%; max-height: 90%; text-align: center; }
+        .modal-content img { max-width: 100%; max-height: 70vh; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h1>📦 Magazzino Pro</h1>
-    <input type="text" id="cerca" onkeyup="filtra()" placeholder="Cerca per nome o codice...">
+<div class="sticky-header">
+    <div class="header">
+        <h2 style="margin:0 0 10px 0;">📦 Magazzino Smart</h2>
+        <input type="text" id="cerca" onkeyup="filtra()" placeholder="Cerca prodotto...">
+    </div>
 </div>
 
-<div id="elenco-materiale">
-    <p>Caricamento dati...</p>
-</div>
+<div id="elenco-materiale"></div>
 
-<div style="background: white; padding: 15px; border-radius: 10px; margin-top: 30px; overflow-x: auto;">
-    <h3>📋 Ultimi 5 Movimenti</h3>
-    <table>
-        <thead><tr><th>Chi</th><th>Cosa</th><th>Q.tà</th></tr></thead>
-        <tbody id="corpo-storico"></tbody>
-    </table>
+<div id="fotoModal" class="modal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3 id="modalTitle"></h3>
+        <img id="modalImg" src="" alt="Foto prodotto">
+        <br><br>
+        <button onclick="document.getElementById('fotoModal').style.display='none'" style="background:var(--dark); width: 100%;">CHIUDI</button>
+    </div>
 </div>
 
 <script>
@@ -48,41 +63,42 @@
     const supabaseClient = supabase.createClient(S_URL, S_KEY);
 
     async function inizializza() {
-        try {
-            const { data: utensili, error: uErr } = await supabaseClient.from('utensili').select('*').order('cassetto', { ascending: true });
-            const { data: log, error: lErr } = await supabaseClient.from('log_movimenti').select('*').order('data', { ascending: false }).limit(5);
-
-            if (uErr) throw uErr;
-            renderizza(utensili || []);
-            renderizzaStorico(log || []);
-        } catch (err) {
-            document.getElementById('elenco-materiale').innerHTML = "<p style='color:red; background:white; padding:20px; border-radius:10px;'><b>ERRORE DATABASE:</b> " + err.message + "<br><br>Controlla che le colonne 'cassetto', 'desc', 'qty' siano scritte correttamente su Supabase.</p>";
-        }
+        const { data, error } = await supabaseClient.from('utensili').select('*').order('cassetto', { ascending: true });
+        if (!error) renderizza(data);
     }
 
     function renderizza(dati) {
         const cont = document.getElementById('elenco-materiale');
-        if (dati.length === 0) {
-            cont.innerHTML = "<p>Nessun articolo trovato.</p>";
-            return;
-        }
         cont.innerHTML = "";
-        
         const gruppi = {};
+
         dati.forEach(u => {
-            const c = u.cassetto || "NON ASSEGNATO";
+            const c = u.cassetto || "GENERALE";
             if (!gruppi[c]) gruppi[c] = [];
             gruppi[c].push(u);
         });
 
         for (const [nome, prodotti] of Object.entries(gruppi)) {
-            let html = `<div class="cassetto-header">📍 ${nome}</div><div class="grid">`;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'cassetto-wrapper';
+            
+            const header = document.createElement('div');
+            header.className = 'cassetto-header';
+            header.innerHTML = `📍 ${nome.toUpperCase()} (${prodotti.length})`;
+            header.onclick = () => {
+                header.classList.toggle('active');
+                content.classList.toggle('open');
+            };
+
+            const content = document.createElement('div');
+            content.className = 'cassetto-content';
+            
             prodotti.forEach(p => {
                 const isLow = p.qty <= p.min;
-                html += `
+                content.innerHTML += `
                     <div class="card ${isLow ? 'sottoscorta' : ''}">
                         <div class="qty-badge" style="color:${isLow ? 'red':'green'}">${p.qty}</div>
-                        <h3 style="margin:0">${p.desc}</h3>
+                        <h4 style="margin:0; cursor:pointer; color:var(--primary);" onclick="mostraFoto('${p.desc}', '${p.img}')">🔍 ${p.desc}</h4>
                         <small>Cod: ${p.cod_int}</small>
                         <div class="actions">
                             <button class="btn-preleva" onclick="movimento(${p.id}, '${p.desc}', ${p.qty}, 'scarico')">PRELEVA</button>
@@ -90,42 +106,42 @@
                         </div>
                     </div>`;
             });
-            html += `</div>`;
-            cont.innerHTML += html;
+
+            wrapper.appendChild(header);
+            wrapper.appendChild(content);
+            cont.appendChild(wrapper);
         }
     }
 
+    function mostraFoto(titolo, url) {
+        if (!url || url === 'null') { alert("Nessuna foto disponibile"); return; }
+        document.getElementById('modalTitle').innerText = titolo;
+        document.getElementById('modalImg').src = url;
+        document.getElementById('fotoModal').style.display = 'flex';
+    }
+
     async function movimento(id, desc, attuale, tipo) {
-        const chi = prompt("Tuo Nome:");
+        const chi = prompt("Chi sta operando?");
         if (!chi) return;
-        const qta = parseInt(prompt(tipo === 'scarico' ? "Quanti ne prendi?" : "Quanti ne aggiungi?"));
+        const qta = parseInt(prompt("Quantità?"));
         if (isNaN(qta) || qta <= 0) return;
 
         const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
-        if (nuovaQty < 0) { alert("Scorta insufficiente!"); return; }
+        if (nuovaQty < 0) return alert("Errore: Giacenza insufficiente!");
 
-        const { error: e1 } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
-        const { error: e2 } = await supabaseClient.from('log_movimenti').insert([{ operatore: chi, articolo: desc, quantita: tipo === 'scarico' ? -qta : qta }]);
-
-        if (!e1 && !e2) { alert("Fatto!"); inizializza(); } 
-        else { alert("Errore nel salvataggio!"); }
-    }
-
-    function renderizzaStorico(log) {
-        document.getElementById('corpo-storico').innerHTML = log.map(l => `
-            <tr>
-                <td>${l.operatore}</td>
-                <td>${l.articolo}</td>
-                <td style="color:${l.quantita < 0 ? 'red':'green'}"><b>${l.quantita}</b></td>
-            </tr>
-        `).join('');
+        await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
+        await supabaseClient.from('log_movimenti').insert([{ operatore: chi, articolo: desc, quantita: tipo === 'scarico' ? -qta : qta }]);
+        inizializza();
     }
 
     function filtra() {
         const t = document.getElementById('cerca').value.toLowerCase();
+        // Durante la ricerca, apriamo tutti i cassetti per far vedere i risultati
+        document.querySelectorAll('.cassetto-content').forEach(c => c.classList.add('open'));
         document.querySelectorAll('.card').forEach(c => {
             c.style.display = c.innerText.toLowerCase().includes(t) ? "" : "none";
         });
+        if(t === "") document.querySelectorAll('.cassetto-content').forEach(c => c.classList.remove('open'));
     }
 
     inizializza();
