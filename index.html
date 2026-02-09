@@ -1,97 +1,80 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-
-    
-<div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-    <img src="https://www.eurolls.com/public/immagini/Marchio_Eurolls-nobg_1700494321.png" alt="Logo Azienda" style="height: 50px; width: auto;">
-    <h2 style="margin:0;">Magazzino Utensili</h2>
-</div>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Officina v6 - Pro</title>
+    <title>Magazzino Officina & Olii v8</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
-            --primary: #3498db; 
-            --danger: #e74c3c; 
-            --success: #2ecc71; 
-            --dark: #2c3e50; 
-            --warning: #f1c40f;
-            --bg: #f4f7f6;
+            --primary: #3498db; --danger: #e74c3c; --success: #2ecc71; 
+            --dark: #2c3e50; --warning: #f1c40f; --bg: #f4f7f6;
         }
         
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); padding: 10px; margin: 0; color: var(--dark); }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 10px; margin: 0; color: var(--dark); }
         
-        /* Header fisso con controlli */
+        /* Header fisso */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--bg); padding-bottom: 10px; }
-        .header { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .header { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        input#cerca { 
-            width: 100%; padding: 12px; border: 2px solid var(--primary); border-radius: 8px; 
-            font-size: 16px; box-sizing: border-box; outline: none;
-        }
+        .nav-tabs { display: flex; gap: 5px; margin-bottom: 10px; }
+        .nav-tabs button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; background: #ddd; font-size: 14px; }
+        .nav-tabs button.active { background: var(--dark); color: white; }
+
+        input#cerca { width: 100%; padding: 12px; border: 2px solid var(--primary); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
 
         .btn-toolbar { display: flex; gap: 5px; margin-top: 10px; }
-        .btn-toolbar button { flex: 1; padding: 8px; font-size: 12px; cursor: pointer; border-radius: 5px; border: none; background: var(--dark); color: white; font-weight: bold; }
-
-        /* Sezione Storico */
-        #sezione-storico { 
-            display: none; background: white; margin-top: 10px; padding: 15px; 
-            border-radius: 8px; border: 1px solid #ddd; max-height: 300px; overflow-y: auto; 
-        }
-        .log-item { font-size: 0.85rem; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .log-item:last-child { border: none; }
+        .btn-toolbar button { flex: 1; padding: 10px; font-size: 12px; cursor: pointer; border-radius: 5px; border: none; background: #95a5a6; color: white; font-weight: bold; }
 
         /* Contenitore Cassetti */
         .cassetto-wrapper { margin-top: 10px; border-radius: 8px; overflow: hidden; background: white; border: 1px solid #ddd; }
-        .cassetto-header { 
-            background: var(--dark); color: white; padding: 12px 15px; cursor: pointer; 
-            display: flex; justify-content: space-between; align-items: center; font-weight: bold;
-        }
-        .cassetto-header::after { content: '▼'; font-size: 0.8rem; transition: 0.3s; }
-        .cassetto-header.active::after { transform: rotate(180deg); }
-
-        /* Griglia Prodotti ottimizzata per 40+ articoli */
+        .cassetto-header { background: var(--dark); color: white; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; font-weight: bold; }
+        
         .cassetto-content { display: none; padding: 8px; background: #ecf0f1; }
-        .cassetto-content.open { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
-            gap: 8px; 
-        }
+        .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 
-        /* Card Prodotto Compatta */
+        /* Card Prodotto */
         .card { 
-            background: white; border-radius: 6px; padding: 10px; position: relative; 
-            border-left: 5px solid var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;
+            background: white; border-radius: 8px; padding: 12px; position: relative; 
+            border-left: 6px solid var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; min-height: 120px;
         }
         .card.sottoscorta { border-left-color: var(--danger); background: #fff5f5; }
+        .card.olio { border-left-color: var(--warning); }
         
-        .qty-badge { position: absolute; top: 5px; right: 8px; font-size: 18px; font-weight: 800; }
-        .card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--primary); cursor: pointer; line-height: 1.1; }
+        .qty-badge { position: absolute; top: 8px; right: 10px; text-align: right; }
+        .qty-num { font-size: 20px; font-weight: 800; display: block; line-height: 1; }
+        .qty-unit { font-size: 10px; font-weight: bold; text-transform: uppercase; }
+
+        .card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--primary); cursor: pointer; line-height: 1.2; padding-right: 40px; }
         .card small { font-size: 0.75rem; color: #7f8c8d; }
 
-        .actions { display: flex; gap: 4px; margin-top: 8px; }
-        .actions button { flex: 1; padding: 6px 2px; border: none; border-radius: 4px; color: white; font-weight: bold; font-size: 10px; cursor: pointer; }
+        .actions { display: flex; gap: 5px; margin-top: auto; padding-top: 10px; }
+        .actions button { flex: 1; padding: 10px 2px; border: none; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; cursor: pointer; }
         .btn-preleva { background: var(--primary); }
         .btn-carica { background: var(--success); }
 
+        /* Sezione Storico */
+        #sezione-storico { display: none; background: white; margin-top: 10px; padding: 15px; border-radius: 8px; border: 2px solid var(--dark); max-height: 300px; overflow-y: auto; }
+        .log-item { font-size: 0.85rem; padding: 8px 0; border-bottom: 1px solid #eee; }
+
         /* Modal Foto */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 10px; border-radius: 10px; max-width: 90%; text-align: center; }
-        .modal-content img { max-width: 100%; max-height: 70vh; border-radius: 5px; object-fit: contain; }
+        .modal-content { background: white; padding: 15px; border-radius: 10px; max-width: 90%; text-align: center; }
+        .modal-content img { max-width: 100%; max-height: 60vh; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div class="sticky-header">
     <div class="header">
-        <h2 style="margin:0 0 10px 0;">📦 Magazzino Pro v6</h2>
+        <div class="nav-tabs">
+            <button id="tab-utensili" class="active" onclick="cambiaTab('utensili')">🛠 UTENSILI</button>
+            <button id="tab-olii" onclick="cambiaTab('olii')">🛢 OLII</button>
+        </div>
         <input type="text" id="cerca" onkeyup="filtra()" placeholder="Cerca prodotto o codice...">
         <div class="btn-toolbar">
-            <button onclick="caricaStorico()">📜 STORICO</button>
+            <button onclick="caricaStorico()">📜 LOG</button>
             <button onclick="filtraSottoscorta()" id="btnSotto">🚨 SOTTOSCORTA</button>
             <button onclick="inizializza()">🔄 REFRESH</button>
         </div>
@@ -100,7 +83,7 @@
 
 <div id="sezione-storico">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h3 style="margin:0;">Ultimi 20 Movimenti</h3>
+        <h3 style="margin:0;">Ultimi Movimenti</h3>
         <button onclick="document.getElementById('sezione-storico').style.display='none'">Chiudi</button>
     </div>
     <div id="lista-log"></div>
@@ -111,40 +94,49 @@
 <div id="fotoModal" class="modal" onclick="this.style.display='none'">
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 id="modalTitle" style="margin-top:0;"></h3>
-        <img id="modalImg" src="" alt="Foto prodotto">
-        <button onclick="document.getElementById('fotoModal').style.display='none'" style="background:var(--dark); color:white; width:100%; padding:12px; border:none; border-radius:5px; margin-top:10px; font-weight:bold;">CHIUDI</button>
+        <img id="modalImg" src="">
+        <button onclick="document.getElementById('fotoModal').style.display='none'" style="width:100%; padding:12px; margin-top:10px; background:var(--dark); color:white; border:none; border-radius:5px; font-weight:bold;">CHIUDI</button>
     </div>
 </div>
 
 <script>
-    // Configurazione Supabase
     const S_URL = "https://yaflecdmyvamveenzfph.supabase.co";
     const S_KEY = "sb_publishable_YUNFFby__QxMgl4d_LdLvw_MS7IPGRV";
     const supabaseClient = supabase.createClient(S_URL, S_KEY);
 
     let datiLocali = [];
+    let tabCorrente = 'utensili';
 
     async function inizializza() {
         const { data, error } = await supabaseClient
             .from('utensili')
             .select('*')
-            .order('cassetto', { ascending: true })
-            .order('desc', { ascending: true });
+            .order('cassetto', { ascending: true });
         
         if (!error) {
             datiLocali = data;
-            renderizza(data);
-        } else {
-            alert("Errore caricamento dati: " + error.message);
+            renderizza();
         }
     }
 
-    function renderizza(dati) {
+    function cambiaTab(tipo) {
+        tabCorrente = tipo;
+        document.getElementById('tab-utensili').classList.toggle('active', tipo === 'utensili');
+        document.getElementById('tab-olii').classList.toggle('active', tipo === 'olii');
+        renderizza();
+    }
+
+    function renderizza(datiDaMostrare = null) {
         const cont = document.getElementById('elenco-materiale');
         cont.innerHTML = "";
-        const gruppi = {};
+        
+        const sorgente = datiDaMostrare || datiLocali.filter(item => {
+            const isOlioCassetto = item.cassetto && item.cassetto.toUpperCase().includes("OLIO");
+            return tabCorrente === 'olii' ? isOlioCassetto : !isOlioCassetto;
+        });
 
-        dati.forEach(u => {
+        const gruppi = {};
+        sorgente.forEach(u => {
             const c = u.cassetto || "GENERALE";
             if (!gruppi[c]) gruppi[c] = [];
             gruppi[c].push(u);
@@ -153,20 +145,24 @@
         for (const [nome, prodotti] of Object.entries(gruppi)) {
             const wrapper = document.createElement('div');
             wrapper.className = 'cassetto-wrapper';
-            
             const header = document.createElement('div');
             header.className = 'cassetto-header';
-            header.innerHTML = `<span>📍 ${nome.toUpperCase()}</span> <span>${prodotti.length} art.</span>`;
+            header.innerHTML = `<span>📍 ${nome}</span> <span>${prodotti.length} Art.</span>`;
             
             const content = document.createElement('div');
-            content.className = 'cassetto-content';
+            content.className = 'cassetto-content open'; // Di base li teniamo aperti per comodità touch
             
             prodotti.forEach(p => {
                 const isLow = p.qty <= p.min;
+                const unita = (p.cassetto && p.cassetto.toUpperCase().includes("OLIO")) ? "Litri" : "Pz";
+                
                 content.innerHTML += `
-                    <div class="card ${isLow ? 'sottoscorta' : ''}">
-                        <div class="qty-badge" style="color:${isLow ? 'var(--danger)':'var(--success)'}">${p.qty}</div>
-                        <h4 onclick="mostraFoto('${p.desc.replace(/'/g, "\\'")}', '${p.img}')">🔍 ${p.desc}</h4>
+                    <div class="card ${isLow ? 'sottoscorta' : ''} ${unita === 'Litri' ? 'olio' : ''}">
+                        <div class="qty-badge" style="color:${isLow ? 'var(--danger)':'var(--success)'}">
+                            <span class="qty-num">${Math.round(p.qty)}</span>
+                            <span class="qty-unit">${unita}</span>
+                        </div>
+                        <h4 onclick="mostraFoto('${p.desc.replace(/'/g, "\\'")}', '${p.img}')">${p.desc}</h4>
                         <small>Cod: ${p.cod_int || '-'}</small>
                         <div class="actions">
                             <button class="btn-preleva" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico')">PRELEVA</button>
@@ -175,104 +171,68 @@
                     </div>`;
             });
 
-            header.onclick = () => {
-                header.classList.toggle('active');
-                content.classList.toggle('open');
-            };
-
+            header.onclick = () => content.classList.toggle('open');
             wrapper.appendChild(header);
             wrapper.appendChild(content);
             cont.appendChild(wrapper);
         }
     }
 
-    async function caricaStorico() {
-        const div = document.getElementById('sezione-storico');
-        const lista = document.getElementById('lista-log');
+    async function movimento(id, desc, attuale, tipo) {
+        const chi = prompt("Chi sta operando?");
+        if (!chi) return;
+        const qtaStr = prompt("Quantità intera (es: 1, 5, 10):");
+        if (!qtaStr) return;
         
-        if (div.style.display === 'block') {
-            div.style.display = 'none';
-            return;
+        const qta = parseInt(qtaStr);
+        if (isNaN(qta) || qta <= 0) return alert("Inserire un numero intero!");
+
+        const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
+        if (nuovaQty < 0) return alert("Giacenza insufficiente!");
+
+        const { error } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
+        if (!error) {
+            await supabaseClient.from('log_movimenti').insert([{ 
+                operatore: chi.toUpperCase(), articolo: desc, quantita: tipo === 'scarico' ? -qta : qta 
+            }]);
+            inizializza();
         }
-
-        const { data, error } = await supabaseClient
-            .from('log_movimenti')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(20);
-
-        if (error) return alert("Errore log");
-
-        lista.innerHTML = data.map(l => `
-            <div class="log-item">
-                <small>${new Date(l.created_at).toLocaleString()}</small><br>
-                <strong>${l.operatore}</strong>: ${l.quantita > 0 ? '➕' : '➖'} ${Math.abs(l.quantita)} pz di <em>${l.articolo}</em>
-            </div>
-        `).join('');
-        
-        div.style.display = 'block';
     }
 
     function mostraFoto(titolo, url) {
-        if (!url || url === 'null' || url === '') { alert("Nessuna foto disponibile"); return; }
+        if (!url || url === 'null' || url === '') return alert("Nessuna foto disponibile");
         document.getElementById('modalTitle').innerText = titolo;
         document.getElementById('modalImg').src = url;
         document.getElementById('fotoModal').style.display = 'flex';
     }
 
-    async function movimento(id, desc, attuale, tipo) {
-        const chi = prompt("Chi sta operando?");
-        if (!chi) return;
-        const qtaStr = prompt("Quantità?");
-        const qta = parseInt(qtaStr);
-        if (isNaN(qta) || qta <= 0) return;
-
-        const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
-        if (nuovaQty < 0) return alert("Errore: Giacenza insufficiente!");
-
-        const { error: upErr } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
-        if (upErr) return alert("Errore aggiornamento!");
-
-        await supabaseClient.from('log_movimenti').insert([{ 
-            operatore: chi.toUpperCase(), 
-            articolo: desc, 
-            quantita: tipo === 'scarico' ? -qta : qta 
-        }]);
-
-        inizializza();
+    async function caricaStorico() {
+        const div = document.getElementById('sezione-storico');
+        const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(25);
+        document.getElementById('lista-log').innerHTML = data.map(l => `
+            <div class="log-item">
+                <strong>${l.operatore}</strong>: ${l.quantita > 0 ? '📥 CARICO':'📤 PRELIEVO'} ${Math.abs(l.quantita)} - ${l.articolo}
+            </div>
+        `).join('');
+        div.style.display = 'block';
     }
 
     function filtra() {
         const t = document.getElementById('cerca').value.toLowerCase();
-        const cards = document.querySelectorAll('.card');
-        const headers = document.querySelectorAll('.cassetto-header');
-        const contents = document.querySelectorAll('.cassetto-content');
-
-        if (t === "") {
-            inizializza(); // Reset vista
-            return;
-        }
-
-        contents.forEach(c => c.classList.add('open')); // Apri tutto durante ricerca
-        cards.forEach(c => {
-            const text = c.innerText.toLowerCase();
-            c.style.display = text.includes(t) ? "" : "none";
-        });
+        if (t === "") { renderizza(); return; }
+        const filtrati = datiLocali.filter(u => u.desc.toLowerCase().includes(t) || (u.cod_int && u.cod_int.toLowerCase().includes(t)));
+        renderizza(filtrati);
     }
 
     let soloSottoscorta = false;
     function filtraSottoscorta() {
         soloSottoscorta = !soloSottoscorta;
-        const btn = document.getElementById('btnSotto');
-        
+        document.getElementById('btnSotto').style.background = soloSottoscorta ? "var(--danger)" : "#95a5a6";
         if (soloSottoscorta) {
-            btn.style.background = "var(--danger)";
             const filtrati = datiLocali.filter(u => u.qty <= u.min);
             renderizza(filtrati);
-            document.querySelectorAll('.cassetto-content').forEach(c => c.classList.add('open'));
         } else {
-            btn.style.background = "var(--dark)";
-            renderizza(datiLocali);
+            renderizza();
         }
     }
 
@@ -280,4 +240,3 @@
 </script>
 </body>
 </html>
-
