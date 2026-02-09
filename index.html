@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Officina & Olii v8</title>
+    <title>Magazzino v9 - Officina & Olii</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -13,7 +13,6 @@
         
         body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 10px; margin: 0; color: var(--dark); }
         
-        /* Header fisso */
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--bg); padding-bottom: 10px; }
         .header { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
@@ -26,18 +25,16 @@
         .btn-toolbar { display: flex; gap: 5px; margin-top: 10px; }
         .btn-toolbar button { flex: 1; padding: 10px; font-size: 12px; cursor: pointer; border-radius: 5px; border: none; background: #95a5a6; color: white; font-weight: bold; }
 
-        /* Contenitore Cassetti */
         .cassetto-wrapper { margin-top: 10px; border-radius: 8px; overflow: hidden; background: white; border: 1px solid #ddd; }
         .cassetto-header { background: var(--dark); color: white; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; font-weight: bold; }
         
         .cassetto-content { display: none; padding: 8px; background: #ecf0f1; }
-        .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
 
-        /* Card Prodotto */
         .card { 
             background: white; border-radius: 8px; padding: 12px; position: relative; 
             border-left: 6px solid var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column; min-height: 120px;
+            display: flex; flex-direction: column; min-height: 130px;
         }
         .card.sottoscorta { border-left-color: var(--danger); background: #fff5f5; }
         .card.olio { border-left-color: var(--warning); }
@@ -46,19 +43,17 @@
         .qty-num { font-size: 20px; font-weight: 800; display: block; line-height: 1; }
         .qty-unit { font-size: 10px; font-weight: bold; text-transform: uppercase; }
 
-        .card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--primary); cursor: pointer; line-height: 1.2; padding-right: 40px; }
-        .card small { font-size: 0.75rem; color: #7f8c8d; }
+        .card h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: var(--primary); cursor: pointer; line-height: 1.2; padding-right: 45px; }
+        .badge-codice { background: #eee; padding: 3px 6px; border-radius: 4px; display: inline-block; margin-bottom: 8px; font-size: 0.75rem; color: #333; border: 1px solid #ccc; }
 
         .actions { display: flex; gap: 5px; margin-top: auto; padding-top: 10px; }
         .actions button { flex: 1; padding: 10px 2px; border: none; border-radius: 4px; color: white; font-weight: bold; font-size: 11px; cursor: pointer; }
         .btn-preleva { background: var(--primary); }
         .btn-carica { background: var(--success); }
 
-        /* Sezione Storico */
         #sezione-storico { display: none; background: white; margin-top: 10px; padding: 15px; border-radius: 8px; border: 2px solid var(--dark); max-height: 300px; overflow-y: auto; }
         .log-item { font-size: 0.85rem; padding: 8px 0; border-bottom: 1px solid #eee; }
 
-        /* Modal Foto */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 15px; border-radius: 10px; max-width: 90%; text-align: center; }
         .modal-content img { max-width: 100%; max-height: 60vh; border-radius: 5px; }
@@ -72,11 +67,11 @@
             <button id="tab-utensili" class="active" onclick="cambiaTab('utensili')">🛠 UTENSILI</button>
             <button id="tab-olii" onclick="cambiaTab('olii')">🛢 OLII</button>
         </div>
-        <input type="text" id="cerca" onkeyup="filtra()" placeholder="Cerca prodotto o codice...">
+        <input type="text" id="cerca" onkeyup="filtra()" placeholder="Cerca descrizione o codice...">
         <div class="btn-toolbar">
             <button onclick="caricaStorico()">📜 LOG</button>
             <button onclick="filtraSottoscorta()" id="btnSotto">🚨 SOTTOSCORTA</button>
-            <button onclick="inizializza()">🔄 REFRESH</button>
+            <button onclick="inizializza()">🔄 AGGIORNA</button>
         </div>
     </div>
 </div>
@@ -150,7 +145,7 @@
             header.innerHTML = `<span>📍 ${nome}</span> <span>${prodotti.length} Art.</span>`;
             
             const content = document.createElement('div');
-            content.className = 'cassetto-content open'; // Di base li teniamo aperti per comodità touch
+            content.className = 'cassetto-content open';
             
             prodotti.forEach(p => {
                 const isLow = p.qty <= p.min;
@@ -163,7 +158,9 @@
                             <span class="qty-unit">${unita}</span>
                         </div>
                         <h4 onclick="mostraFoto('${p.desc.replace(/'/g, "\\'")}', '${p.img}')">${p.desc}</h4>
-                        <small>Cod: ${p.cod_int || '-'}</small>
+                        <div class="badge-codice">
+                            <strong>COD: ${p.cod_int || '---'}</strong>
+                        </div>
                         <div class="actions">
                             <button class="btn-preleva" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico')">PRELEVA</button>
                             <button class="btn-carica" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'carico')">CARICA</button>
@@ -220,7 +217,10 @@
     function filtra() {
         const t = document.getElementById('cerca').value.toLowerCase();
         if (t === "") { renderizza(); return; }
-        const filtrati = datiLocali.filter(u => u.desc.toLowerCase().includes(t) || (u.cod_int && u.cod_int.toLowerCase().includes(t)));
+        const filtrati = datiLocali.filter(u => 
+            u.desc.toLowerCase().includes(t) || 
+            (u.cod_int && u.cod_int.toLowerCase().includes(t))
+        );
         renderizza(filtrati);
     }
 
