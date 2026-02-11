@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Totale v20 - Foto</title>
+    <title>Magazzino Totale v21 - FULL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -24,8 +24,7 @@
         .cassetto-header { background: #5d6d7e; color: white; padding: 18px; display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; }
         .cassetto-content { display: grid; padding: 12px; background: #ecf0f1; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
         
-        .card { background: white; border-radius: 12px; padding: 18px; position: relative; border-left: 12px solid var(--success); box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 320px; cursor: pointer; transition: transform 0.1s; }
-        .card:active { transform: scale(0.98); }
+        .card { background: white; border-radius: 12px; padding: 18px; position: relative; border-left: 12px solid var(--success); box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 320px; cursor: pointer; }
         .card.sottoscorta { border-left-color: var(--danger); background: #fff5f5; }
         
         .qty-container { position: absolute; top: 15px; right: 15px; text-align: right; }
@@ -44,10 +43,9 @@
         .actions { display: flex; gap: 10px; margin-top: auto; }
         .actions button { flex: 1; padding: 22px 5px; border: none; border-radius: 10px; color: white; font-weight: 900; text-transform: uppercase; font-size: 18px; }
         
-        /* Modal per Foto */
         #modal-foto { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
         #modal-foto img { max-width: 95%; max-height: 80%; border-radius: 10px; border: 4px solid white; object-fit: contain; }
-        #modal-foto h3 { color: white; margin-bottom: 15px; text-transform: uppercase; text-align: center; padding: 0 20px; }
+        #modal-foto h3 { color: white; margin-bottom: 15px; text-transform: uppercase; text-align: center; }
         #modal-foto button { margin-top: 20px; padding: 20px 50px; font-size: 22px; font-weight: bold; border-radius: 12px; border: none; background: var(--danger); color: white; }
 
         #sezione-storico { display: none; position: fixed; top: 2%; left: 2%; width: 96%; height: 96%; background: white; z-index: 2000; padding: 25px; border-radius: 15px; border: 4px solid var(--dark); overflow-y: auto; }
@@ -58,14 +56,30 @@
 <div class="sticky-header">
     <div class="header">
         <select id="select-isola" class="isola-selector" onchange="resetSearchAndFilter()">
-            <optgroup label="ISOLE">
+            <optgroup label="ISOLE DI LAVORO">
                 <option value="okuma fori">🏝️ OKUMA FORI</option>
-                <option value="fastems">🏝️ FASTEMS</option>
+                <option value="okuma profili">🏝️ OKUMA PROFILI</option>
+                <option value="puma / dmg">🏝️ PUMA / DMG</option>
+                <option value="puma / okuma 45">🏝️ PUMA / OKUMA 45</option>
                 <option value="puma 600/ puma 700">🏝️ PUMA 600 / 700</option>
+                <option value="dmg / youji">🏝️ DMG / YOUJI</option>
+                <option value="ktm / youji">🏝️ KTM / YOUJI</option>
+                <option value="rettifiche fori">🏝️ RETTIFICHE FORI</option>
+                <option value="fastems">🏝️ FASTEMS</option>
+                <option value="rettifiche spessori">🏝️ RETTIFICHE SPESSORI</option>
+                <option value="tos hostivar">🏝️ TOS HOSTIVAR</option>
+                <option value="rv 1000/ bragonzi">🏝️ RV 1000 / BRAGONZI</option>
+                <option value="montaggio">🏝️ MONTAGGIO</option>
+                <option value="elettroerosioni">🏝️ ELETTROEROSIONI</option>
+                <option value="vtm100 / youji">🏝️ VTM100 / YOUJI</option>
+            </optgroup>
+            <optgroup label="MAGAZZINI SPECIALI">
+                <option value="olio esterno">🚚 OLIO ESTERNO FABBRICA</option>
                 <option value="cassettiera ufficio">📂 CASSETTIERA UFFICIO</option>
-                </optgroup>
+                <option value="olii">🛢️ TUTTI GLI OLII (FILTRO)</option>
+            </optgroup>
         </select>
-        <input type="text" id="cerca" onkeyup="filtraTesto()" placeholder="🔍 CERCA ARTICOLO O CODICE...">
+        <input type="text" id="cerca" onkeyup="filtraTesto()" placeholder="🔍 CERCA IN TUTTO IL MAGAZZINO...">
         <div class="btn-toolbar">
             <button onclick="caricaStorico()" style="background: var(--dark);">📜 STORICO</button>
             <button onclick="inizializza()">🔄 AGGIORNA</button>
@@ -95,10 +109,7 @@
     }
 
     function apriFoto(url, titolo) {
-        if (!url || url === "" || url === null) {
-            alert("Nessuna immagine disponibile per questo articolo.");
-            return;
-        }
+        if (!url || url === "" || url === null) return;
         document.getElementById('img-zoom').src = url;
         document.getElementById('titolo-foto').innerText = titolo;
         document.getElementById('modal-foto').style.display = 'flex';
@@ -108,38 +119,41 @@
         const cont = document.getElementById('elenco-materiale');
         cont.innerHTML = "";
         const selIsola = document.getElementById('select-isola').value.toLowerCase();
-        
-        const sorgente = datiFiltrati || datiLocali.filter(item => (item.isola || "").toLowerCase().trim() === selIsola);
+        const isRicercaActive = (datiFiltrati !== null);
+
+        const sorgente = datiFiltrati || datiLocali.filter(item => {
+            const isolaDB = (item.isola || "").toLowerCase().trim();
+            if (selIsola === 'olii') return (item.cassetto || "").toUpperCase().includes("OLIO");
+            return isolaDB === selIsola;
+        });
 
         const gruppi = {};
         sorgente.forEach(u => {
-            const c = (u.cassetto || "NON DEFINITO").toUpperCase();
-            if (!gruppi[c]) gruppi[c] = [];
-            gruppi[c].push(u);
+            const chiave = isRicercaActive ? (u.isola || "VARIE").toUpperCase() : (u.cassetto || "NON DEFINITO").toUpperCase();
+            if (!gruppi[chiave]) gruppi[chiave] = [];
+            gruppi[chiave].push(u);
         });
 
         for (const [nome, prodotti] of Object.entries(gruppi)) {
             const wrapper = document.createElement('div');
             wrapper.className = 'cassetto-wrapper';
-            wrapper.innerHTML = `<div class="cassetto-header"><span>📍 ${nome}</span></div>`;
+            wrapper.innerHTML = `<div class="cassetto-header"><span>${isRicercaActive ? '🏝️ ' : '📍 '}${nome}</span> <span>${prodotti.length} ART.</span></div>`;
             const content = document.createElement('div');
             content.className = 'cassetto-content';
             
             prodotti.forEach(p => {
                 const isLow = p.qty <= p.min;
                 const hasImg = p.img && p.img !== "";
+                const isOlio = (p.cassetto || "").toUpperCase().includes("OLIO") || (p.isola || "").toLowerCase().includes("olio");
+                
                 const card = document.createElement('div');
                 card.className = `card ${isLow ? 'sottoscorta' : ''}`;
-                
-                // Cliccando sulla card si apre la foto
-                card.onclick = (e) => {
-                    if (e.target.tagName !== 'BUTTON') apriFoto(p.img, p.desc);
-                };
+                card.onclick = (e) => { if (e.target.tagName !== 'BUTTON') apriFoto(p.img, p.desc); };
                 
                 card.innerHTML = `
                     <div class="qty-container" style="color:${isLow ? 'var(--danger)':'var(--success)'}">
                         <span class="qty-num">${Math.round(p.qty)}</span>
-                        <span class="qty-label">${(p.cassetto||"").toUpperCase().includes("OLIO") ? "Litri" : "Pezzi"}</span>
+                        <span class="qty-label">${isOlio ? "Litri" : "Pezzi"}</span>
                     </div>
                     <h4>${p.desc} ${hasImg ? '<span class="cam-icon">📷</span>' : ''}</h4>
                     <div class="badge-code b-int">INT: ${p.cod_int || '---'}</div>
@@ -156,8 +170,8 @@
         }
     }
 
-    // ... (restante logica di ricerca, movimento e storico rimane uguale) ...
     function resetSearchAndFilter() { document.getElementById('cerca').value = ""; renderizza(); }
+
     function filtraTesto() {
         const t = document.getElementById('cerca').value.toLowerCase().trim();
         if (t === "") { renderizza(); return; }
@@ -180,6 +194,17 @@
             await supabaseClient.from('log_movimenti').insert([{ operatore: chi.toUpperCase(), articolo: desc, quantita: tipo === 'scarico' ? -qta : qta, isola: isolaArticolo }]);
             inizializza();
         }
+    }
+
+    async function caricaStorico() {
+        const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(25);
+        document.getElementById('lista-log').innerHTML = '<h1 style="font-size:32px;">STORICO</h1>' + data.map(l => `
+            <div style="padding:15px; border-bottom:2px solid #eee; font-size:1.2rem;">
+                <strong>${l.operatore}</strong>: ${l.quantita > 0 ? '📥' : '📤'} ${Math.abs(l.quantita)} - ${l.articolo}<br>
+                <small>${new Date(l.created_at).toLocaleString()} | ${l.isola || '?'}</small>
+            </div>
+        `).join('') + '<br><button onclick="document.getElementById(\'sezione-storico\').style.display=\'none\'" style="width:100%; padding:20px; background:var(--dark); color:white; border:none; border-radius:12px; font-weight:bold;">CHIUDI</button>';
+        document.getElementById('sezione-storico').style.display = 'block';
     }
 
     inizializza();
