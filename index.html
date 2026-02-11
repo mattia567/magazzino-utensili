@@ -3,65 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Multi-Isola v13</title>
+    <title>Magazzino Totale v14</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
             --primary: #3498db; --danger: #e74c3c; --success: #2ecc71; 
-            --dark: #2c3e50; --warning: #f1c40f; --bg: #f4f7f6;
+            --dark: #2c3e50; --bg: #f4f7f6;
         }
-        
         body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 10px; margin: 0; color: var(--dark); }
-        
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--bg); padding-bottom: 10px; }
         .header { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        
-        .isola-selector { width: 100%; padding: 15px; border-radius: 8px; border: 3px solid var(--dark); background: var(--dark); color: white; font-weight: bold; font-size: 18px; margin-bottom: 10px; appearance: none; text-align: center; cursor: pointer; }
-
+        .isola-selector { width: 100%; padding: 15px; border-radius: 8px; border: 3px solid var(--dark); background: var(--dark); color: white; font-weight: bold; font-size: 18px; margin-bottom: 10px; appearance: none; text-align: center; }
         input#cerca { width: 100%; padding: 15px; border: 2px solid var(--primary); border-radius: 8px; font-size: 18px; box-sizing: border-box; }
-
         .btn-toolbar { display: flex; gap: 8px; margin-top: 10px; }
-        .btn-toolbar button { flex: 1; padding: 12px; font-size: 14px; cursor: pointer; border-radius: 8px; border: none; background: #95a5a6; color: white; font-weight: bold; text-transform: uppercase; }
-
+        .btn-toolbar button { flex: 1; padding: 12px; font-size: 14px; cursor: pointer; border-radius: 8px; border: none; background: #95a5a6; color: white; font-weight: bold; }
         .cassetto-wrapper { margin-top: 12px; border-radius: 10px; overflow: hidden; background: white; border: 1px solid #ddd; }
         .cassetto-header { background: #5d6d7e; color: white; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; }
-        
         .cassetto-content { display: none; padding: 10px; background: #ecf0f1; }
         .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-
-        .card { 
-            background: white; border-radius: 10px; padding: 15px; position: relative; 
-            border-left: 8px solid var(--success); box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; min-height: 220px;
-        }
+        .card { background: white; border-radius: 10px; padding: 15px; position: relative; border-left: 8px solid var(--success); box-shadow: 0 3px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 220px; }
         .card.sottoscorta { border-left-color: var(--danger); background: #fff5f5; }
-        
         .qty-badge { position: absolute; top: 10px; right: 10px; text-align: right; }
         .qty-num { font-size: 26px; font-weight: 900; display: block; line-height: 1; }
-        .qty-unit { font-size: 12px; font-weight: bold; text-transform: uppercase; }
-
-        .card h4 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--primary); cursor: pointer; line-height: 1.2; padding-right: 55px; text-transform: uppercase; }
-        
-        .codici-container { font-size: 0.85rem; margin-bottom: 10px; }
-        .badge-int { background: #e8f4fd; color: #2980b9; padding: 4px 8px; border-radius: 5px; border: 1px solid #3498db; margin-bottom: 5px; display: inline-block; font-weight: bold; }
-        .badge-prod { background: #fdf2e9; color: #d35400; padding: 4px 8px; border-radius: 5px; border: 1px solid #e67e22; display: inline-block; font-weight: bold; }
-
+        .card h4 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--primary); text-transform: uppercase; padding-right: 55px; }
+        .badge-int { background: #e8f4fd; color: #2980b9; padding: 4px 8px; border-radius: 5px; border: 1px solid #3498db; margin-bottom: 5px; display: inline-block; font-weight: bold; font-size: 0.85rem; }
         .pos-label { font-size: 0.85rem; font-weight: bold; color: #7f8c8d; margin-top: auto; margin-bottom: 12px; padding-top: 5px; border-top: 1px solid #eee; }
-
         .actions { display: flex; gap: 8px; }
-        .actions button { flex: 1; padding: 15px 5px; border: none; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; text-transform: uppercase; cursor: pointer; }
-        .btn-preleva { background: var(--primary); }
-        .btn-carica { background: var(--success); }
-
-        #sezione-storico { display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 85%; background: white; z-index: 2000; padding: 20px; border-radius: 12px; border: 3px solid var(--dark); overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.5); }
-        .log-header { display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid var(--dark); margin-bottom: 15px; padding-bottom: 10px; position: sticky; top: 0; background: white; }
-        .log-item { font-size: 1.1rem; padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
-        .log-prelievo { color: var(--danger); font-weight: bold; }
-        .log-carico { color: var(--success); font-weight: bold; }
-
-        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 15px; border-radius: 10px; max-width: 90%; text-align: center; }
-        .modal-content img { max-width: 100%; max-height: 60vh; border-radius: 5px; }
+        .actions button { flex: 1; padding: 15px 5px; border: none; border-radius: 6px; color: white; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        #sezione-storico { display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 85%; background: white; z-index: 2000; padding: 20px; border-radius: 12px; border: 3px solid var(--dark); overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -69,22 +38,28 @@
 <div class="sticky-header">
     <div class="header">
         <select id="select-isola" class="isola-selector" onchange="filtraIsola()">
-            <option value="okuma fori">🏝️ OKUMA FORI</option>
-            <option value="okuma profili">🏝️ OKUMA PROFILI</option>
-            <option value="puma / dmg">🏝️ PUMA / DMG</option>
-            <option value="puma / okuma 45">🏝️ PUMA / OKUMA 45</option>
-            <option value="puma 600/ puma 700">🏝️ PUMA 600 / 700</option>
-            <option value="dmg / youji">🏝️ DMG / YOUJI</option>
-            <option value="ktm / youji">🏝️ KTM / YOUJI</option>
-            <option value="rettifiche fori">🏝️ RETTIFICHE FORI</option>
-            <option value="fastems">🏝️ FASTEMS</option>
-            <option value="rettifiche spessori">🏝️ RETTIFICHE SPESSORI</option>
-            <option value="tos hostivar">🏝️ TOS HOSTIVAR</option>
-            <option value="rv 1000/ bragonzi">🏝️ RV 1000 / BRAGONZI</option>
-            <option value="montaggio">🏝️ MONTAGGIO</option>
-            <option value="elettroerosioni">🏝️ ELETTROEROSIONI</option>
-            <option value="vtm100 / youji">🏝️ VTM100 / YOUJI</option>
-            <option value="olii">🛢️ MAGAZZINO OLII</option>
+            <optgroup label="ISOLE DI LAVORO">
+                <option value="okuma fori">🏝️ OKUMA FORI</option>
+                <option value="okuma profili">🏝️ OKUMA PROFILI</option>
+                <option value="puma / dmg">🏝️ PUMA / DMG</option>
+                <option value="puma / okuma 45">🏝️ PUMA / OKUMA 45</option>
+                <option value="puma 600/ puma 700">🏝️ PUMA 600 / 700</option>
+                <option value="dmg / youji">🏝️ DMG / YOUJI</option>
+                <option value="ktm / youji">🏝️ KTM / YOUJI</option>
+                <option value="rettifiche fori">🏝️ RETTIFICHE FORI</option>
+                <option value="fastems">🏝️ FASTEMS</option>
+                <option value="rettifiche spessori">🏝️ RETTIFICHE SPESSORI</option>
+                <option value="tos hostivar">🏝️ TOS HOSTIVAR</option>
+                <option value="rv 1000/ bragonzi">🏝️ RV 1000 / BRAGONZI</option>
+                <option value="montaggio">🏝️ MONTAGGIO</option>
+                <option value="elettroerosioni">🏝️ ELETTROEROSIONI</option>
+                <option value="vtm100 / youji">🏝️ VTM100 / YOUJI</option>
+            </optgroup>
+            <optgroup label="MAGAZZINI SPECIALI">
+                <option value="olio esterno">🚚 OLIO ESTERNO FABBRICA</option>
+                <option value="cassettiera ufficio">📂 CASSETTIERA UFFICIO</option>
+                <option value="olii">🛢️ TUTTI GLI OLII (FILTRO)</option>
+            </optgroup>
         </select>
         
         <input type="text" id="cerca" onkeyup="filtraTesto()" placeholder="Cerca descrizione o codici...">
@@ -97,60 +72,36 @@
     </div>
 </div>
 
-<div id="sezione-storico">
-    <div class="log-header">
-        <h2 style="margin:0;">Ultimi Movimenti</h2>
-        <button onclick="document.getElementById('sezione-storico').style.display='none'" style="padding:15px 25px; font-weight:bold; background:var(--danger); color:white; border:none; border-radius:8px;">CHIUDI</button>
-    </div>
-    <div id="lista-log"></div>
-</div>
-
 <div id="elenco-materiale"></div>
-
-<div id="fotoModal" class="modal" onclick="this.style.display='none'">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <h3 id="modalTitle" style="margin-top:0;"></h3>
-        <img id="modalImg" src="">
-        <button onclick="document.getElementById('fotoModal').style.display='none'" style="width:100%; padding:15px; margin-top:10px; background:var(--dark); color:white; border:none; border-radius:8px; font-weight:bold;">CHIUDI</button>
-    </div>
-</div>
+<div id="sezione-storico"><div id="lista-log"></div></div>
 
 <script>
     const S_URL = "https://yaflecdmyvamveenzfph.supabase.co";
     const S_KEY = "sb_publishable_YUNFFby__QxMgl4d_LdLvw_MS7IPGRV";
     const supabaseClient = supabase.createClient(S_URL, S_KEY);
-
     let datiLocali = [];
-    let isolaSelezionata = "okuma fori";
 
     async function inizializza() {
         const { data, error } = await supabaseClient.from('utensili').select('*').order('cassetto', { ascending: true });
-        if (!error) {
-            datiLocali = data;
-            filtraIsola();
-        }
+        if (!error) { datiLocali = data; renderizza(); }
     }
 
-    function filtraIsola() {
-        isolaSelezionata = document.getElementById('select-isola').value;
-        renderizza();
-    }
+    function filtraIsola() { renderizza(); }
 
     function renderizza(datiFiltrati = null) {
         const cont = document.getElementById('elenco-materiale');
         cont.innerHTML = "";
+        const sel = document.getElementById('select-isola').value.toLowerCase();
         
         const sorgente = datiFiltrati || datiLocali.filter(item => {
-            if (isolaSelezionata === 'olii') {
-                return item.cassetto && item.cassetto.toUpperCase().includes("OLIO");
-            }
-            return item.isola && item.isola.toLowerCase() === isolaSelezionata.toLowerCase();
+            const isolaDB = (item.isola || "").toLowerCase().trim();
+            if (sel === 'olii') return (item.cassetto || "").toUpperCase().includes("OLIO");
+            return isolaDB === sel;
         });
 
         const gruppi = {};
         sorgente.forEach(u => {
             const c = u.cassetto || "NON DEFINITO";
-            // Per gli olii non raggruppiamo per cassetto se preferisci, o manteniamo coerenza
             if (!gruppi[c]) gruppi[c] = [];
             gruppi[c].push(u);
         });
@@ -158,35 +109,20 @@
         for (const [nome, prodotti] of Object.entries(gruppi)) {
             const wrapper = document.createElement('div');
             wrapper.className = 'cassetto-wrapper';
-            wrapper.innerHTML = `<div class="cassetto-header" onclick="this.nextSibling.classList.toggle('open')">
-                <span>📍 ${nome}</span> <span>${prodotti.length} Art.</span>
-            </div>`;
-            
+            wrapper.innerHTML = `<div class="cassetto-header" onclick="this.nextSibling.classList.toggle('open')"><span>📍 ${nome}</span> <span>${prodotti.length} Art.</span></div>`;
             const content = document.createElement('div');
             content.className = 'cassetto-content open';
-            
             prodotti.forEach(p => {
                 const isLow = p.qty <= p.min;
-                const unita = isolaSelezionata === 'olii' ? "L" : "Pz";
                 content.innerHTML += `
                     <div class="card ${isLow ? 'sottoscorta' : ''}">
-                        <div class="qty-badge" style="color:${isLow ? 'var(--danger)':'var(--success)'}">
-                            <span class="qty-num">${Math.round(p.qty)}</span>
-                            <span class="qty-unit">${unita}</span>
-                        </div>
-                        <h4 onclick="mostraFoto('${p.desc.replace(/'/g, "\\'")}', '${p.img}')">${p.desc}</h4>
-                        <div class="codici-container">
-                            <div class="badge-int">INT: ${p.cod_int || '---'}</div><br>
-                            <div class="badge-prod">PROD: ${p.cod_prod || '---'}</div>
-                        </div>
-                        
-                        <div class="pos-label">
-                            📍 POS: <span style="color:var(--dark)">${p.cassetto || '---'}</span>
-                        </div>
-
+                        <div class="qty-badge" style="color:${isLow ? 'var(--danger)':'var(--success)'}"><span class="qty-num">${Math.round(p.qty)}</span></div>
+                        <h4>${p.desc}</h4>
+                        <div class="badge-int">INT: ${p.cod_int || '---'}</div>
+                        <div class="pos-label">📍 POS: ${p.cassetto || '---'}</div>
                         <div class="actions">
-                            <button class="btn-preleva" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico')">PRELEVA</button>
-                            <button class="btn-carica" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'carico')">CARICA</button>
+                            <button style="background:var(--primary)" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico')">PRELEVA</button>
+                            <button style="background:var(--success)" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'carico')">CARICA</button>
                         </div>
                     </div>`;
             });
@@ -196,72 +132,24 @@
     }
 
     async function movimento(id, desc, attuale, tipo) {
-        const chi = prompt("Operatore (Nome):");
-        if (!chi) return;
-        const qtaStr = prompt("Quantità intera:");
-        const qta = parseInt(qtaStr);
-        if (isNaN(qta) || qta <= 0) return;
-
+        const chi = prompt("Operatore:"); if (!chi) return;
+        const qta = parseInt(prompt("Quantità:")); if (isNaN(qta)) return;
         const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
-        if (nuovaQty < 0) return alert("Errore: Giacenza insufficiente!");
-
         const { error } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
         if (!error) {
-            await supabaseClient.from('log_movimenti').insert([{ 
-                operatore: chi.toUpperCase(), articolo: desc, quantita: tipo === 'scarico' ? -qta : qta, isola: isolaSelezionata 
-            }]);
+            await supabaseClient.from('log_movimenti').insert([{ operatore: chi.toUpperCase(), articolo: desc, quantita: tipo === 'scarico' ? -qta : qta, isola: document.getElementById('select-isola').value }]);
             inizializza();
         }
     }
 
-    async function caricaStorico() {
-        const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(30);
-        document.getElementById('lista-log').innerHTML = data.map(l => {
-            const classeMov = l.quantita > 0 ? 'log-carico' : 'log-prelievo';
-            const segno = l.quantita > 0 ? '📥 CARICO' : '📤 PRELIEVO';
-            return `
-                <div class="log-item">
-                    <div>
-                        <small style="color:#7f8c8d">${new Date(l.created_at).toLocaleString()}</small><br>
-                        <strong>${l.operatore}</strong> <span style="font-size:0.8rem; background:#eee; padding:2px 5px; border-radius:3px;">${l.isola || '?'}</span>
-                        <div style="margin-top:5px; font-weight:bold; color:var(--primary)">${l.articolo}</div>
-                    </div>
-                    <div class="${classeMov}" style="text-align:right">
-                        ${segno}<br>
-                        <span style="font-size:1.4rem">${Math.abs(l.quantita)}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-        document.getElementById('sezione-storico').style.display = 'block';
-    }
-
     function filtraTesto() {
         const t = document.getElementById('cerca').value.toLowerCase();
+        const sel = document.getElementById('select-isola').value.toLowerCase();
         const filtrati = datiLocali.filter(u => 
-            (u.isola && u.isola.toLowerCase() === isolaSelezionata.toLowerCase() || (isolaSelezionata === 'olii' && u.cassetto && u.cassetto.toUpperCase().includes("OLIO"))) &&
-            (u.desc.toLowerCase().includes(t) || (u.cod_int && u.cod_int.toLowerCase().includes(t)) || (u.cod_prod && u.cod_prod.toLowerCase().includes(t)))
+            ((u.isola || "").toLowerCase().trim() === sel || (sel === 'olii' && (u.cassetto || "").toUpperCase().includes("OLIO"))) &&
+            (u.desc.toLowerCase().includes(t) || (u.cod_int || "").toLowerCase().includes(t))
         );
         renderizza(filtrati);
-    }
-
-    let soloSottoscorta = false;
-    function filtraSottoscorta() {
-        soloSottoscorta = !soloSottoscorta;
-        document.getElementById('btnSotto').style.background = soloSottoscorta ? "var(--danger)" : "#95a5a6";
-        if (soloSottoscorta) {
-            const filtrati = datiLocali.filter(u => (u.isola && u.isola.toLowerCase() === isolaSelezionata.toLowerCase()) && u.qty <= u.min);
-            renderizza(filtrati);
-        } else {
-            renderizza();
-        }
-    }
-
-    function mostraFoto(titolo, url) {
-        if (!url || url === 'null' || url === '') return alert("Nessuna foto disponibile");
-        document.getElementById('modalTitle').innerText = titolo;
-        document.getElementById('modalImg').src = url;
-        document.getElementById('fotoModal').style.display = 'flex';
     }
 
     inizializza();
