@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Totale v22 - Sottoscorta Fix</title>
+    <title>Magazzino Officina v26 - FULL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -17,8 +17,8 @@
         .isola-selector { width: 100%; padding: 18px; border-radius: 10px; border: 4px solid var(--dark); background: var(--dark); color: white; font-weight: 800; font-size: 22px; margin-bottom: 12px; appearance: none; text-align: center; }
         input#cerca { width: 100%; padding: 18px; border: 4px solid var(--accent); border-radius: 10px; font-size: 22px; box-sizing: border-box; font-weight: bold; background: #fffde7; }
         
-        .btn-toolbar { display: flex; gap: 10px; margin-top: 12px; }
-        .btn-toolbar button { flex: 1; padding: 15px; font-size: 14px; cursor: pointer; border-radius: 10px; border: none; background: #95a5a6; color: white; font-weight: 900; text-transform: uppercase; }
+        .btn-toolbar { display: flex; gap: 8px; margin-top: 12px; }
+        .btn-toolbar button { flex: 1; padding: 15px 5px; font-size: 13px; cursor: pointer; border-radius: 10px; border: none; background: #95a5a6; color: white; font-weight: 900; text-transform: uppercase; }
         .btn-sottoscorta { background: var(--danger) !important; }
         
         .cassetto-wrapper { margin-top: 15px; border-radius: 12px; overflow: hidden; background: white; border: 2px solid #ddd; }
@@ -30,7 +30,7 @@
         
         .qty-container { position: absolute; top: 15px; right: 15px; text-align: right; }
         .qty-num { font-size: 42px; font-weight: 900; display: block; line-height: 0.9; }
-        .qty-label { font-size: 14px; font-weight: 800; text-transform: uppercase; color: #666; }
+        .qty-label { font-size: 14px; font-weight: 800; color: #666; }
         
         .card h4 { margin: 10px 0 15px 0; font-size: 1.4rem; color: var(--primary); text-transform: uppercase; padding-right: 85px; line-height: 1.1; font-weight: 800; }
         .cam-icon { font-size: 1.2rem; vertical-align: middle; margin-left: 5px; color: var(--accent); }
@@ -46,10 +46,13 @@
         
         #modal-foto { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
         #modal-foto img { max-width: 95%; max-height: 80%; border-radius: 10px; border: 4px solid white; object-fit: contain; }
-        #modal-foto h3 { color: white; margin-bottom: 15px; text-transform: uppercase; text-align: center; }
-        #modal-foto button { margin-top: 20px; padding: 20px 50px; font-size: 22px; font-weight: bold; border-radius: 12px; border: none; background: var(--danger); color: white; }
-
-        #sezione-storico { display: none; position: fixed; top: 2%; left: 2%; width: 96%; height: 96%; background: white; z-index: 2000; padding: 25px; border-radius: 15px; border: 4px solid var(--dark); overflow-y: auto; }
+        
+        #sezione-storico { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto; padding-top: 70px; }
+        .storico-header-fisso { position: fixed; top: 0; width: 100%; background: var(--dark); color: white; padding: 10px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 2001; }
+        #cerca-log { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .log-item { padding: 15px; border-bottom: 2px solid #eee; }
+        .destinazione-badge { background: #34495e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.9rem; font-weight: bold; }
+        .btn-chiudi-top { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 900; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -80,9 +83,9 @@
                 <option value="olii">🛢️ TUTTI GLI OLII (FILTRO)</option>
             </optgroup>
         </select>
-        <input type="text" id="cerca" onkeyup="filtraTesto()" placeholder="🔍 CERCA IN TUTTO IL MAGAZZINO...">
+        <input type="text" id="cerca" onkeyup="filtraTesto()" placeholder="🔍 CERCA ARTICOLO O CODICE...">
         <div class="btn-toolbar">
-            <button onclick="caricaStorico()" style="background: var(--dark);">📜 STORICO</button>
+            <button onclick="apriStorico()" style="background: var(--dark);">📜 STORICO</button>
             <button onclick="filtraSottoscorta()" class="btn-sottoscorta">🚨 SOTTOSCORTA</button>
             <button onclick="inizializza()">🔄 AGGIORNA</button>
         </div>
@@ -91,30 +94,48 @@
 
 <div id="elenco-materiale"></div>
 
-<div id="modal-foto" onclick="this.style.display='none'">
-    <h3 id="titolo-foto"></h3>
-    <img id="img-zoom" src="" alt="Foto Utensile">
-    <button>CHIUDI ANTEPRIMA</button>
+<div id="sezione-storico">
+    <div class="storico-header-fisso">
+        <span style="font-weight:900; font-size:20px;">📜 STORICO</span>
+        <button class="btn-chiudi-top" onclick="document.getElementById('sezione-storico').style.display='none'">CHIUDI ✕</button>
+    </div>
+    <div style="padding: 20px;">
+        <input type="text" id="cerca-log" onkeyup="filtraStorico()" placeholder="🔍 Interroga lo storico (operatore, articolo, macchina)...">
+        <div id="lista-log"></div>
+    </div>
 </div>
 
-<div id="sezione-storico"><div id="lista-log"></div></div>
+<div id="modal-foto" onclick="this.style.display='none'">
+    <h3 id="titolo-foto" style="color:white; text-align:center; padding: 0 10px;"></h3>
+    <img id="img-zoom" src="" alt="">
+    <button style="margin-top:20px; padding:15px 40px; border-radius:10px; border:none; background:var(--danger); color:white; font-weight:bold;">CHIUDI</button>
+</div>
 
 <script>
     const S_URL = "https://yaflecdmyvamveenzfph.supabase.co";
     const S_KEY = "sb_publishable_YUNFFby__QxMgl4d_LdLvw_MS7IPGRV";
     const supabaseClient = supabase.createClient(S_URL, S_KEY);
     let datiLocali = [];
+    let logLocali = [];
+
+    // ELENCO MACCHINE UFFICIALE
+    const listaMacchine = [
+        "20BG01 ALESATRICE BRAGONZI", "20DM03 DMG MORI CGV 9", "20DP01 PUMA 700 LY",
+        "20DP02 VTR1216 M", "20DP04 VTR1216M", "20DW01 PUMA 600 PICIUL",
+        "20DW02 PUMA 600 MARIO", "20JW01 JOVANKA", "20KD01 KTM",
+        "20KY01 LASER KEYENCE", "20MO01 DMG NLX2500-700", "20MS01 MORI-SEIKI SL 65B",
+        "20MT01 DMG MATE 55", "20MV01 MITSUBISHI MV2400", "20MV02 MITSUBISHI MV4800",
+        "20OK04 VTM 100 PORFIDO", "20OK05 LB 35 PROFILI", "20OK06 LB 35 FORI 1",
+        "20OK07 LB 35 FORI 2", "20OK08 OKUMA BIMANDRINO", "20OK10 OKUMA LB 45",
+        "20OM04 OKAMOTO PRG8", "20RH01 TOS HOSTIVAR", "20RR01 STEFFORD RTR 1400",
+        "20RR02 LODI RTR 4002", "20RV01 RV 1000", "20WT01 WOTAN S200",
+        "20YO01 YOUJI YV 1200 PORFIDO", "20YO02 YOUJI YV 1200 FABIANO",
+        "20YO03 YOUJI ROMUL", "20OK22 FASTEMS MC1", "20OK23 FASTEMS MC2", "20OK24 FASTEMS MC3"
+    ];
 
     async function inizializza() {
         const { data, error } = await supabaseClient.from('utensili').select('*').order('cassetto', { ascending: true });
         if (!error) { datiLocali = data; renderizza(); }
-    }
-
-    function apriFoto(url, titolo) {
-        if (!url || url === "" || url === null) return;
-        document.getElementById('img-zoom').src = url;
-        document.getElementById('titolo-foto').innerText = titolo;
-        document.getElementById('modal-foto').style.display = 'flex';
     }
 
     function renderizza(datiFiltrati = null) {
@@ -128,11 +149,6 @@
             if (selIsola === 'olii') return (item.cassetto || "").toUpperCase().includes("OLIO");
             return isolaDB === selIsola;
         });
-
-        if (sorgente.length === 0) {
-            cont.innerHTML = `<div style="text-align:center; padding:50px; font-size:20px; font-weight:bold; color:#888;">Nessun articolo trovato</div>`;
-            return;
-        }
 
         const gruppi = {};
         sorgente.forEach(u => {
@@ -150,19 +166,17 @@
             
             prodotti.forEach(p => {
                 const isLow = p.qty <= p.min;
-                const hasImg = p.img && p.img !== "";
-                const isOlio = (p.cassetto || "").toUpperCase().includes("OLIO") || (p.isola || "").toLowerCase().includes("olio");
-                
                 const card = document.createElement('div');
                 card.className = `card ${isLow ? 'sottoscorta' : ''}`;
                 card.onclick = (e) => { if (e.target.tagName !== 'BUTTON') apriFoto(p.img, p.desc); };
+                const unit = (p.cassetto||"").toUpperCase().includes("OLIO") ? "Litri" : "Pezzi";
                 
                 card.innerHTML = `
                     <div class="qty-container" style="color:${isLow ? 'var(--danger)':'var(--success)'}">
                         <span class="qty-num">${Math.round(p.qty)}</span>
-                        <span class="qty-label">${isOlio ? "Litri" : "Pezzi"}</span>
+                        <span class="qty-label">${unit}</span>
                     </div>
-                    <h4>${p.desc} ${hasImg ? '<span class="cam-icon">📷</span>' : ''}</h4>
+                    <h4>${p.desc} ${p.img ? '<span class="cam-icon">📷</span>' : ''}</h4>
                     <div class="badge-code b-int">INT: ${p.cod_int || '---'}</div>
                     <div class="badge-code b-prod">PROD: ${p.cod_prod || '---'}</div>
                     <div class="pos-label">📦 POS: ${p.cassetto || '---'}</div>
@@ -177,46 +191,66 @@
         }
     }
 
-    function filtraSottoscorta() {
-        const filtrati = datiLocali.filter(u => u.qty <= u.min);
-        renderizza(filtrati);
-    }
-
-    function resetSearchAndFilter() { document.getElementById('cerca').value = ""; renderizza(); }
-
-    function filtraTesto() {
-        const t = document.getElementById('cerca').value.toLowerCase().trim();
-        if (t === "") { renderizza(); return; }
-        const filtrati = datiLocali.filter(u => 
-            (u.desc || "").toLowerCase().includes(t) || 
-            (u.cod_int || "").toLowerCase().includes(t) || 
-            (u.cod_prod || "").toLowerCase().includes(t) ||
-            (u.isola || "").toLowerCase().includes(t)
-        );
-        renderizza(filtrati);
-    }
-
     async function movimento(id, desc, attuale, tipo, isolaArticolo) {
         const chi = prompt("OPERATORE:"); if (!chi) return;
         const qtaVal = prompt("QUANTITÀ:"); if (!qtaVal) return;
         const qta = parseInt(qtaVal); if (isNaN(qta)) return;
+
+        let macchinaDestinazione = "MAGAZZINO";
+        if (tipo === 'scarico') {
+            let msg = "SELEZIONA MACCHINA (Inserisci il Numero):\n\n" + listaMacchine.map((m, i) => `${i + 1}. ${m}`).join("\n");
+            const scelta = prompt(msg);
+            const idx = parseInt(scelta) - 1;
+            macchinaDestinazione = listaMacchine[idx] || "GENERICO";
+        }
+
         const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
         const { error } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
         if (!error) {
-            await supabaseClient.from('log_movimenti').insert([{ operatore: chi.toUpperCase(), articolo: desc, quantita: tipo === 'scarico' ? -qta : qta, isola: isolaArticolo }]);
+            await supabaseClient.from('log_movimenti').insert([{ 
+                operatore: chi.toUpperCase(), articolo: desc, quantita: tipo === 'scarico' ? -qta : qta, 
+                isola: isolaArticolo, macchina: macchinaDestinazione.toUpperCase() 
+            }]);
             inizializza();
         }
     }
 
-    async function caricaStorico() {
-        const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(25);
-        document.getElementById('lista-log').innerHTML = '<h1 style="font-size:32px;">STORICO</h1>' + data.map(l => `
-            <div style="padding:15px; border-bottom:2px solid #eee; font-size:1.2rem;">
-                <strong>${l.operatore}</strong>: ${l.quantita > 0 ? '📥' : '📤'} ${Math.abs(l.quantita)} - ${l.articolo}<br>
-                <small>${new Date(l.created_at).toLocaleString()} | ${l.isola || '?'}</small>
-            </div>
-        `).join('') + '<br><button onclick="document.getElementById(\'sezione-storico\').style.display=\'none\'" style="width:100%; padding:20px; background:var(--dark); color:white; border:none; border-radius:12px; font-weight:bold;">CHIUDI</button>';
+    async function apriStorico() {
+        const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(100);
+        logLocali = data;
+        mostraLog(logLocali);
         document.getElementById('sezione-storico').style.display = 'block';
+    }
+
+    function mostraLog(dati) {
+        const lista = document.getElementById('lista-log');
+        lista.innerHTML = dati.map(l => `
+            <div class="log-item">
+                <strong>${l.operatore}</strong>: ${l.quantita > 0 ? '📥' : '📤'} ${Math.abs(l.quantita)} - ${l.articolo}<br>
+                <span class="destinazione-badge">📍 ${l.isola || '---'}</span> 
+                ${l.macchina ? `<span class="destinazione-badge" style="background:#e67e22">⚙️ ${l.macchina}</span>` : ''}
+                <br><small style="color:#888">${new Date(l.created_at).toLocaleString()}</small>
+            </div>
+        `).join('');
+    }
+
+    function filtraStorico() {
+        const t = document.getElementById('cerca-log').value.toLowerCase();
+        mostraLog(logLocali.filter(l => (l.operatore+l.articolo+l.macchina).toLowerCase().includes(t)));
+    }
+
+    function filtraSottoscorta() { renderizza(datiLocali.filter(u => u.qty <= u.min)); }
+    function filtraTesto() {
+        const t = document.getElementById('cerca').value.toLowerCase().trim();
+        if (!t) { renderizza(); return; }
+        renderizza(datiLocali.filter(u => (u.desc+u.cod_int+u.cod_prod+u.isola).toLowerCase().includes(t)));
+    }
+    function resetSearchAndFilter() { document.getElementById('cerca').value = ""; renderizza(); }
+    function apriFoto(url, titolo) {
+        if (!url) return;
+        document.getElementById('img-zoom').src = url;
+        document.getElementById('titolo-foto').innerText = titolo;
+        document.getElementById('modal-foto').style.display = 'flex';
     }
 
     inizializza();
