@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Totale v14</title>
+    <title>Magazzino Totale v16 - XL</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -12,25 +12,43 @@
         }
         body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 10px; margin: 0; color: var(--dark); }
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--bg); padding-bottom: 10px; }
-        .header { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .isola-selector { width: 100%; padding: 15px; border-radius: 8px; border: 3px solid var(--dark); background: var(--dark); color: white; font-weight: bold; font-size: 18px; margin-bottom: 10px; appearance: none; text-align: center; }
-        input#cerca { width: 100%; padding: 15px; border: 2px solid var(--primary); border-radius: 8px; font-size: 18px; box-sizing: border-box; }
-        .btn-toolbar { display: flex; gap: 8px; margin-top: 10px; }
-        .btn-toolbar button { flex: 1; padding: 12px; font-size: 14px; cursor: pointer; border-radius: 8px; border: none; background: #95a5a6; color: white; font-weight: bold; }
-        .cassetto-wrapper { margin-top: 12px; border-radius: 10px; overflow: hidden; background: white; border: 1px solid #ddd; }
-        .cassetto-header { background: #5d6d7e; color: white; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; }
-        .cassetto-content { display: none; padding: 10px; background: #ecf0f1; }
-        .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-        .card { background: white; border-radius: 10px; padding: 15px; position: relative; border-left: 8px solid var(--success); box-shadow: 0 3px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 220px; }
+        .header { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* Selettore Isola e Cerca Giganti */
+        .isola-selector { width: 100%; padding: 18px; border-radius: 10px; border: 4px solid var(--dark); background: var(--dark); color: white; font-weight: 800; font-size: 22px; margin-bottom: 12px; appearance: none; text-align: center; }
+        input#cerca { width: 100%; padding: 18px; border: 3px solid var(--primary); border-radius: 10px; font-size: 22px; box-sizing: border-box; font-weight: bold; }
+        
+        .btn-toolbar { display: flex; gap: 10px; margin-top: 12px; }
+        .btn-toolbar button { flex: 1; padding: 15px; font-size: 16px; cursor: pointer; border-radius: 10px; border: none; background: #95a5a6; color: white; font-weight: 900; text-transform: uppercase; }
+        
+        /* Cassetti */
+        .cassetto-wrapper { margin-top: 15px; border-radius: 12px; overflow: hidden; background: white; border: 2px solid #ddd; }
+        .cassetto-header { background: #5d6d7e; color: white; padding: 18px; cursor: pointer; display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; }
+        .cassetto-content { display: none; padding: 12px; background: #ecf0f1; }
+        .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; }
+        
+        /* Card XL */
+        .card { background: white; border-radius: 12px; padding: 18px; position: relative; border-left: 10px solid var(--success); box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 280px; }
         .card.sottoscorta { border-left-color: var(--danger); background: #fff5f5; }
-        .qty-badge { position: absolute; top: 10px; right: 10px; text-align: right; }
-        .qty-num { font-size: 26px; font-weight: 900; display: block; line-height: 1; }
-        .card h4 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--primary); text-transform: uppercase; padding-right: 55px; }
-        .badge-int { background: #e8f4fd; color: #2980b9; padding: 4px 8px; border-radius: 5px; border: 1px solid #3498db; margin-bottom: 5px; display: inline-block; font-weight: bold; font-size: 0.85rem; }
-        .pos-label { font-size: 0.85rem; font-weight: bold; color: #7f8c8d; margin-top: auto; margin-bottom: 12px; padding-top: 5px; border-top: 1px solid #eee; }
-        .actions { display: flex; gap: 8px; }
-        .actions button { flex: 1; padding: 15px 5px; border: none; border-radius: 6px; color: white; font-weight: bold; text-transform: uppercase; cursor: pointer; }
-        #sezione-storico { display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 85%; background: white; z-index: 2000; padding: 20px; border-radius: 12px; border: 3px solid var(--dark); overflow-y: auto; }
+        
+        .qty-badge { position: absolute; top: 10px; right: 12px; text-align: right; }
+        .qty-num { font-size: 38px; font-weight: 900; display: block; line-height: 1; }
+        
+        .card h4 { margin: 0 0 12px 0; font-size: 1.3rem; color: var(--primary); text-transform: uppercase; padding-right: 65px; line-height: 1.1; font-weight: 800; }
+        
+        /* Box Codici XL */
+        .codici-container { font-size: 1.1rem; margin-bottom: 12px; }
+        .badge-int { background: #e8f4fd; color: #2980b9; padding: 6px 10px; border-radius: 6px; border: 2px solid #3498db; margin-bottom: 6px; display: inline-block; font-weight: 800; width: 95%; }
+        .badge-prod { background: #fdf2e9; color: #d35400; padding: 6px 10px; border-radius: 6px; border: 2px solid #e67e22; display: inline-block; font-weight: 800; width: 95%; }
+        
+        .pos-label { font-size: 1.1rem; font-weight: 800; color: #555; margin-top: auto; margin-bottom: 15px; padding-top: 8px; border-top: 2px solid #eee; }
+        
+        /* Pulsanti Azione Grandi */
+        .actions { display: flex; gap: 10px; }
+        .actions button { flex: 1; padding: 20px 5px; border: none; border-radius: 8px; color: white; font-weight: 900; text-transform: uppercase; cursor: pointer; font-size: 16px; }
+        
+        /* Storico XL */
+        #sezione-storico { display: none; position: fixed; top: 2%; left: 2%; width: 96%; height: 96%; background: white; z-index: 2000; padding: 25px; border-radius: 15px; border: 4px solid var(--dark); overflow-y: auto; box-sizing: border-box;}
     </style>
 </head>
 <body>
@@ -62,7 +80,7 @@
             </optgroup>
         </select>
         
-        <input type="text" id="cerca" onkeyup="filtraTesto()" placeholder="Cerca descrizione o codici...">
+        <input type="text" id="cerca" onkeyup="filtraTesto()" placeholder="CERCA DESCRIZIONE O CODICI...">
         
         <div class="btn-toolbar">
             <button onclick="caricaStorico()" style="background: var(--dark);">📜 STORICO</button>
@@ -109,7 +127,7 @@
         for (const [nome, prodotti] of Object.entries(gruppi)) {
             const wrapper = document.createElement('div');
             wrapper.className = 'cassetto-wrapper';
-            wrapper.innerHTML = `<div class="cassetto-header" onclick="this.nextSibling.classList.toggle('open')"><span>📍 ${nome}</span> <span>${prodotti.length} Art.</span></div>`;
+            wrapper.innerHTML = `<div class="cassetto-header" onclick="this.nextSibling.classList.toggle('open')"><span>📍 ${nome}</span> <span>${prodotti.length} ART.</span></div>`;
             const content = document.createElement('div');
             content.className = 'cassetto-content open';
             prodotti.forEach(p => {
@@ -118,7 +136,10 @@
                     <div class="card ${isLow ? 'sottoscorta' : ''}">
                         <div class="qty-badge" style="color:${isLow ? 'var(--danger)':'var(--success)'}"><span class="qty-num">${Math.round(p.qty)}</span></div>
                         <h4>${p.desc}</h4>
-                        <div class="badge-int">INT: ${p.cod_int || '---'}</div>
+                        <div class="codici-container">
+                            <div class="badge-int">INT: ${p.cod_int || '---'}</div><br>
+                            <div class="badge-prod">PROD: ${p.cod_prod || '---'}</div>
+                        </div>
                         <div class="pos-label">📍 POS: ${p.cassetto || '---'}</div>
                         <div class="actions">
                             <button style="background:var(--primary)" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico')">PRELEVA</button>
@@ -132,8 +153,9 @@
     }
 
     async function movimento(id, desc, attuale, tipo) {
-        const chi = prompt("Operatore:"); if (!chi) return;
-        const qta = parseInt(prompt("Quantità:")); if (isNaN(qta)) return;
+        const chi = prompt("OPERATORE:"); if (!chi) return;
+        const qtaVal = prompt("QUANTITÀ:"); if (!qtaVal) return;
+        const qta = parseInt(qtaVal); if (isNaN(qta)) return;
         const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
         const { error } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
         if (!error) {
@@ -147,9 +169,21 @@
         const sel = document.getElementById('select-isola').value.toLowerCase();
         const filtrati = datiLocali.filter(u => 
             ((u.isola || "").toLowerCase().trim() === sel || (sel === 'olii' && (u.cassetto || "").toUpperCase().includes("OLIO"))) &&
-            (u.desc.toLowerCase().includes(t) || (u.cod_int || "").toLowerCase().includes(t))
+            (u.desc.toLowerCase().includes(t) || (u.cod_int || "").toLowerCase().includes(t) || (u.cod_prod || "").toLowerCase().includes(t))
         );
         renderizza(filtrati);
+    }
+
+    async function caricaStorico() {
+        const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(25);
+        document.getElementById('lista-log').innerHTML = '<h1 style="margin-top:0; font-size:32px;">ULTIMI MOVIMENTI</h1>' + data.map(l => `
+            <div style="padding:15px; border-bottom:2px solid #eee; font-size:1.2rem;">
+                <strong style="font-size:1.4rem;">${l.operatore}</strong>: <span style="font-weight:900; color:${l.quantita > 0 ? 'var(--success)':'var(--danger)'}">${l.quantita > 0 ? '📥 CARICO' : '📤 PRELIEVO'}</span> <span style="font-size:1.6rem; font-weight:900;">${Math.abs(l.quantita)}</span><br>
+                <div style="margin: 5px 0; font-weight:bold;">${l.articolo}</div>
+                <small style="color:#666; font-weight:bold;">${new Date(l.created_at).toLocaleString()} | ISOLA: ${l.isola.toUpperCase()}</small>
+            </div>
+        `).join('') + '<br><button onclick="document.getElementById(\'sezione-storico\').style.display=\'none\'" style="width:100%; padding:25px; background:var(--dark); color:white; border:none; border-radius:12px; font-weight:900; font-size:20px;">CHIUDI STORICO</button>';
+        document.getElementById('sezione-storico').style.display = 'block';
     }
 
     inizializza();
