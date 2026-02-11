@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Officina v27 - Selezione Click</title>
+    <title>Magazzino Officina v28 - Storico Dettagliato</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -34,15 +34,14 @@
         .btn-macchina { 
             padding: 15px; border: 2px solid var(--dark); border-radius: 8px; 
             background: #f9f9f9; font-weight: bold; font-size: 16px; text-align: left;
-            cursor: pointer; transition: 0.2s;
+            cursor: pointer;
         }
-        .btn-macchina:active { background: var(--accent); color: white; transform: scale(0.98); }
 
-        /* CARDS E RESTO */
+        /* CARDS */
         .cassetto-wrapper { margin-top: 15px; border-radius: 12px; overflow: hidden; background: white; border: 2px solid #ddd; }
         .cassetto-header { background: #5d6d7e; color: white; padding: 18px; display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; }
         .cassetto-content { display: grid; padding: 12px; background: #ecf0f1; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        .card { background: white; border-radius: 12px; padding: 18px; position: relative; border-left: 12px solid var(--success); box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 320px; cursor: pointer; }
+        .card { background: white; border-radius: 12px; padding: 18px; position: relative; border-left: 12px solid var(--success); box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 320px; }
         .card.sottoscorta { border-left-color: var(--danger); background: #fff5f5; }
         .qty-container { position: absolute; top: 15px; right: 15px; text-align: right; }
         .qty-num { font-size: 42px; font-weight: 900; display: block; line-height: 0.9; }
@@ -54,10 +53,12 @@
         .actions { display: flex; gap: 10px; margin-top: auto; }
         .actions button { flex: 1; padding: 22px 5px; border: none; border-radius: 10px; color: white; font-weight: 900; text-transform: uppercase; font-size: 18px; }
 
+        /* SEZIONE STORICO */
         #sezione-storico { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto; padding-top: 70px; }
         .storico-header-fisso { position: fixed; top: 0; width: 100%; background: var(--dark); color: white; padding: 10px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 2001; }
-        .destinazione-badge { background: #34495e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.9rem; font-weight: bold; }
-        .log-item { padding: 15px; border-bottom: 2px solid #eee; }
+        .log-item { padding: 15px; border-bottom: 2px solid #ddd; background: white; }
+        .log-info-box { font-size: 0.9rem; color: #666; margin-top: 5px; background: #f9f9f9; padding: 8px; border-radius: 5px; display: flex; gap: 10px; }
+        .destinazione-badge { background: #34495e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -102,8 +103,7 @@
 <div id="modal-macchine">
     <div class="modal-content-macchine">
         <h2 style="text-align:center; margin-top:0;">DOVE LO MONTI?</h2>
-        <div class="lista-bottoni-macchine" id="lista-bottoni-macchine">
-            </div>
+        <div class="lista-bottoni-macchine" id="lista-bottoni-macchine"></div>
         <button onclick="chiudiModalMacchina()" style="width:100%; margin-top:20px; padding:15px; background:#ddd; border:none; border-radius:8px; font-weight:bold;">ANNULLA</button>
     </div>
 </div>
@@ -111,10 +111,10 @@
 <div id="sezione-storico">
     <div class="storico-header-fisso">
         <span style="font-weight:900; font-size:20px;">📜 STORICO</span>
-        <button onclick="document.getElementById('sezione-storico').style.display='none'" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold;">CHIUDI</button>
+        <button onclick="document.getElementById('sezione-storico').style.display='none'" style="background:var(--danger); color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold;">CHIUDI</button>
     </div>
     <div style="padding: 20px;">
-        <input type="text" id="cerca-log" onkeyup="filtraStorico()" placeholder="🔍 Cerca nello storico..." style="width:100%; padding:15px; border-radius:8px; border:1px solid #ccc;">
+        <input type="text" id="cerca-log" onkeyup="filtraStorico()" placeholder="🔍 Filtra per operatore, articolo, macchina o codici..." style="width:100%; padding:15px; border-radius:8px; border:1px solid #ccc; font-size:16px; margin-bottom:15px;">
         <div id="lista-log"></div>
     </div>
 </div>
@@ -184,8 +184,8 @@
                     <div class="badge-code b-prod">PROD: ${p.cod_prod || '---'}</div>
                     <div class="pos-label">📦 POS: ${p.cassetto || '---'}</div>
                     <div class="actions">
-                        <button style="background:var(--primary)" onclick="avviaMovimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico', '${p.isola}')">PRELEVA</button>
-                        <button style="background:var(--success)" onclick="avviaMovimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'carico', '${p.isola}')">CARICA</button>
+                        <button style="background:var(--primary)" onclick="avviaMovimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico', '${p.isola}', '${p.cod_int}', '${p.cod_prod}')">PRELEVA</button>
+                        <button style="background:var(--success)" onclick="avviaMovimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'carico', '${p.isola}', '${p.cod_int}', '${p.cod_prod}')">CARICA</button>
                     </div>`;
                 content.appendChild(card);
             });
@@ -194,12 +194,13 @@
         }
     }
 
-    // GESTIONE MOVIMENTO
-    function avviaMovimento(id, desc, attuale, tipo, isola) {
+    function avviaMovimento(id, desc, attuale, tipo, isola, cod_int, cod_prod) {
         const chi = prompt("OPERATORE:"); if (!chi) return;
-        const qta = parseInt(prompt("QUANTITÀ:")); if (isNaN(qta)) return;
+        const qtaVal = prompt("QUANTITÀ:"); if (!qtaVal) return;
+        const qta = parseInt(qtaVal); if (isNaN(qta)) return;
         
-        movimentoCorrente = { id, desc, attuale, tipo, isola, chi, qta };
+        // Salviamo anche i codici nel log per vederli nello storico
+        movimentoCorrente = { id, desc, attuale, tipo, isola, chi, qta, cod_int, cod_prod };
 
         if (tipo === 'scarico') {
             apriModalMacchina();
@@ -225,20 +226,25 @@
 
     async function eseguiSalvataggio(macchinaScelta) {
         chiudiModalMacchina();
-        const { id, attuale, tipo, qta, chi, desc, isola } = movimentoCorrente;
+        const { id, attuale, tipo, qta, chi, desc, isola, cod_int, cod_prod } = movimentoCorrente;
         const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
 
         const { error } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
         if (!error) {
+            // Inviamo i codici a Supabase (assicurati che esistano le colonne cod_int e cod_prod in log_movimenti)
             await supabaseClient.from('log_movimenti').insert([{ 
-                operatore: chi.toUpperCase(), articolo: desc, quantita: tipo === 'scarico' ? -qta : qta, 
-                isola: isola, macchina: macchinaScelta.toUpperCase() 
+                operatore: chi.toUpperCase(), 
+                articolo: desc, 
+                quantita: tipo === 'scarico' ? -qta : qta, 
+                isola: isola, 
+                macchina: macchinaScelta.toUpperCase(),
+                cod_int: cod_int, // Assicurati di avere queste colonne in Supabase
+                cod_prod: cod_prod 
             }]);
             inizializza();
         }
     }
 
-    // STORICO E FILTRI
     async function apriStorico() {
         const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(100);
         logLocali = data;
@@ -249,17 +255,35 @@
     function mostraLog(dati) {
         document.getElementById('lista-log').innerHTML = dati.map(l => `
             <div class="log-item">
-                <strong>${l.operatore}</strong>: ${l.quantita > 0 ? '📥' : '📤'} ${Math.abs(l.quantita)} - ${l.articolo}<br>
-                <span class="destinazione-badge">📍 ${l.isola || '---'}</span> 
-                ${l.macchina ? `<span class="destinazione-badge" style="background:#e67e22">⚙️ ${l.macchina}</span>` : ''}
-                <br><small>${new Date(l.created_at).toLocaleString()}</small>
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <div>
+                        <strong style="font-size:1.1rem;">${l.operatore}</strong>: 
+                        <span style="color:${l.quantita > 0 ? 'var(--success)' : 'var(--danger)'}; font-weight:bold;">
+                            ${l.quantita > 0 ? '📥 CARICO' : '📤 PRELIEVO'} ${Math.abs(l.quantita)}
+                        </span>
+                        <div style="font-weight:bold; margin-top:3px; color:var(--dark);">${l.articolo}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <small style="color:#888;">${new Date(l.created_at).toLocaleString('it-IT', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</small>
+                    </div>
+                </div>
+                <div class="log-info-box">
+                    <span><b>INT:</b> ${l.cod_int || '---'}</span>
+                    <span><b>PROD:</b> ${l.cod_prod || '---'}</span>
+                </div>
+                <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+                    <span class="destinazione-badge">📍 ${l.isola || '---'}</span> 
+                    ${l.macchina ? `<span class="destinazione-badge" style="background:#e67e22">⚙️ ${l.macchina}</span>` : ''}
+                </div>
             </div>
         `).join('');
     }
 
     function filtraStorico() {
         const t = document.getElementById('cerca-log').value.toLowerCase();
-        mostraLog(logLocali.filter(l => (l.operatore+l.articolo+l.macchina).toLowerCase().includes(t)));
+        mostraLog(logLocali.filter(l => 
+            (l.operatore + l.articolo + l.macchina + l.cod_int + l.cod_prod).toLowerCase().includes(t)
+        ));
     }
 
     function filtraSottoscorta() { renderizza(datiLocali.filter(u => u.qty <= u.min)); }
