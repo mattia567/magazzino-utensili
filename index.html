@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Officina v26 - FULL</title>
+    <title>Magazzino Officina v27 - Selezione Click</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -21,38 +21,43 @@
         .btn-toolbar button { flex: 1; padding: 15px 5px; font-size: 13px; cursor: pointer; border-radius: 10px; border: none; background: #95a5a6; color: white; font-weight: 900; text-transform: uppercase; }
         .btn-sottoscorta { background: var(--danger) !important; }
         
+        /* MODALE SELEZIONE MACCHINA */
+        #modal-macchine { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); z-index: 5000; justify-content: center; align-items: center; 
+        }
+        .modal-content-macchine { 
+            background: white; width: 90%; max-width: 500px; max-height: 85vh; 
+            border-radius: 15px; overflow-y: auto; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .lista-bottoni-macchine { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 15px; }
+        .btn-macchina { 
+            padding: 15px; border: 2px solid var(--dark); border-radius: 8px; 
+            background: #f9f9f9; font-weight: bold; font-size: 16px; text-align: left;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-macchina:active { background: var(--accent); color: white; transform: scale(0.98); }
+
+        /* CARDS E RESTO */
         .cassetto-wrapper { margin-top: 15px; border-radius: 12px; overflow: hidden; background: white; border: 2px solid #ddd; }
         .cassetto-header { background: #5d6d7e; color: white; padding: 18px; display: flex; justify-content: space-between; font-size: 20px; font-weight: 900; }
         .cassetto-content { display: grid; padding: 12px; background: #ecf0f1; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        
         .card { background: white; border-radius: 12px; padding: 18px; position: relative; border-left: 12px solid var(--success); box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; min-height: 320px; cursor: pointer; }
         .card.sottoscorta { border-left-color: var(--danger); background: #fff5f5; }
-        
         .qty-container { position: absolute; top: 15px; right: 15px; text-align: right; }
         .qty-num { font-size: 42px; font-weight: 900; display: block; line-height: 0.9; }
-        .qty-label { font-size: 14px; font-weight: 800; color: #666; }
-        
-        .card h4 { margin: 10px 0 15px 0; font-size: 1.4rem; color: var(--primary); text-transform: uppercase; padding-right: 85px; line-height: 1.1; font-weight: 800; }
-        .cam-icon { font-size: 1.2rem; vertical-align: middle; margin-left: 5px; color: var(--accent); }
-
+        .card h4 { margin: 10px 0 15px 0; font-size: 1.4rem; color: var(--primary); text-transform: uppercase; padding-right: 85px; font-weight: 800; }
         .badge-code { display: block; padding: 8px 12px; border-radius: 6px; font-weight: 800; font-size: 1.1rem; margin-bottom: 8px; border: 2px solid; }
         .b-int { background: #e8f4fd; color: #2980b9; border-color: #3498db; }
         .b-prod { background: #fdf2e9; color: #d35400; border-color: #e67e22; }
-        
         .pos-label { font-size: 1.2rem; font-weight: 800; color: #444; margin-bottom: 15px; padding: 10px; background: #eee; border-radius: 8px; }
-        
         .actions { display: flex; gap: 10px; margin-top: auto; }
         .actions button { flex: 1; padding: 22px 5px; border: none; border-radius: 10px; color: white; font-weight: 900; text-transform: uppercase; font-size: 18px; }
-        
-        #modal-foto { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; }
-        #modal-foto img { max-width: 95%; max-height: 80%; border-radius: 10px; border: 4px solid white; object-fit: contain; }
-        
+
         #sezione-storico { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; overflow-y: auto; padding-top: 70px; }
         .storico-header-fisso { position: fixed; top: 0; width: 100%; background: var(--dark); color: white; padding: 10px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 2001; }
-        #cerca-log { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
-        .log-item { padding: 15px; border-bottom: 2px solid #eee; }
         .destinazione-badge { background: #34495e; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.9rem; font-weight: bold; }
-        .btn-chiudi-top { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 900; font-size: 18px; }
+        .log-item { padding: 15px; border-bottom: 2px solid #eee; }
     </style>
 </head>
 <body>
@@ -94,31 +99,35 @@
 
 <div id="elenco-materiale"></div>
 
-<div id="sezione-storico">
-    <div class="storico-header-fisso">
-        <span style="font-weight:900; font-size:20px;">📜 STORICO</span>
-        <button class="btn-chiudi-top" onclick="document.getElementById('sezione-storico').style.display='none'">CHIUDI ✕</button>
-    </div>
-    <div style="padding: 20px;">
-        <input type="text" id="cerca-log" onkeyup="filtraStorico()" placeholder="🔍 Interroga lo storico (operatore, articolo, macchina)...">
-        <div id="lista-log"></div>
+<div id="modal-macchine">
+    <div class="modal-content-macchine">
+        <h2 style="text-align:center; margin-top:0;">DOVE LO MONTI?</h2>
+        <div class="lista-bottoni-macchine" id="lista-bottoni-macchine">
+            </div>
+        <button onclick="chiudiModalMacchina()" style="width:100%; margin-top:20px; padding:15px; background:#ddd; border:none; border-radius:8px; font-weight:bold;">ANNULLA</button>
     </div>
 </div>
 
-<div id="modal-foto" onclick="this.style.display='none'">
-    <h3 id="titolo-foto" style="color:white; text-align:center; padding: 0 10px;"></h3>
-    <img id="img-zoom" src="" alt="">
-    <button style="margin-top:20px; padding:15px 40px; border-radius:10px; border:none; background:var(--danger); color:white; font-weight:bold;">CHIUDI</button>
+<div id="sezione-storico">
+    <div class="storico-header-fisso">
+        <span style="font-weight:900; font-size:20px;">📜 STORICO</span>
+        <button onclick="document.getElementById('sezione-storico').style.display='none'" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold;">CHIUDI</button>
+    </div>
+    <div style="padding: 20px;">
+        <input type="text" id="cerca-log" onkeyup="filtraStorico()" placeholder="🔍 Cerca nello storico..." style="width:100%; padding:15px; border-radius:8px; border:1px solid #ccc;">
+        <div id="lista-log"></div>
+    </div>
 </div>
 
 <script>
     const S_URL = "https://yaflecdmyvamveenzfph.supabase.co";
     const S_KEY = "sb_publishable_YUNFFby__QxMgl4d_LdLvw_MS7IPGRV";
     const supabaseClient = supabase.createClient(S_URL, S_KEY);
+    
     let datiLocali = [];
     let logLocali = [];
+    let movimentoCorrente = null;
 
-    // ELENCO MACCHINE UFFICIALE
     const listaMacchine = [
         "20BG01 ALESATRICE BRAGONZI", "20DM03 DMG MORI CGV 9", "20DP01 PUMA 700 LY",
         "20DP02 VTR1216 M", "20DP04 VTR1216M", "20DW01 PUMA 600 PICIUL",
@@ -130,7 +139,8 @@
         "20OM04 OKAMOTO PRG8", "20RH01 TOS HOSTIVAR", "20RR01 STEFFORD RTR 1400",
         "20RR02 LODI RTR 4002", "20RV01 RV 1000", "20WT01 WOTAN S200",
         "20YO01 YOUJI YV 1200 PORFIDO", "20YO02 YOUJI YV 1200 FABIANO",
-        "20YO03 YOUJI ROMUL", "20OK22 FASTEMS MC1", "20OK23 FASTEMS MC2", "20OK24 FASTEMS MC3"
+        "20YO03 YOUJI ROMUL", "20OK22 FASTEMS MC1", "20OK23 FASTEMS MC2", "20OK24 FASTEMS MC3",
+        "GENERICO / MAGAZZINO"
     ];
 
     async function inizializza() {
@@ -142,8 +152,6 @@
         const cont = document.getElementById('elenco-materiale');
         cont.innerHTML = "";
         const selIsola = document.getElementById('select-isola').value.toLowerCase();
-        const isFiltroAttivo = (datiFiltrati !== null);
-
         const sorgente = datiFiltrati || datiLocali.filter(item => {
             const isolaDB = (item.isola || "").toLowerCase().trim();
             if (selIsola === 'olii') return (item.cassetto || "").toUpperCase().includes("OLIO");
@@ -152,7 +160,7 @@
 
         const gruppi = {};
         sorgente.forEach(u => {
-            const chiave = isFiltroAttivo ? (u.isola || "VARIE").toUpperCase() : (u.cassetto || "NON DEFINITO").toUpperCase();
+            const chiave = (u.cassetto || "NON DEFINITO").toUpperCase();
             if (!gruppi[chiave]) gruppi[chiave] = [];
             gruppi[chiave].push(u);
         });
@@ -160,29 +168,24 @@
         for (const [nome, prodotti] of Object.entries(gruppi)) {
             const wrapper = document.createElement('div');
             wrapper.className = 'cassetto-wrapper';
-            wrapper.innerHTML = `<div class="cassetto-header"><span>${isFiltroAttivo ? '🏝️ ' : '📍 '}${nome}</span> <span>${prodotti.length} ART.</span></div>`;
+            wrapper.innerHTML = `<div class="cassetto-header"><span>📍 ${nome}</span></div>`;
             const content = document.createElement('div');
             content.className = 'cassetto-content';
-            
             prodotti.forEach(p => {
                 const isLow = p.qty <= p.min;
                 const card = document.createElement('div');
                 card.className = `card ${isLow ? 'sottoscorta' : ''}`;
-                card.onclick = (e) => { if (e.target.tagName !== 'BUTTON') apriFoto(p.img, p.desc); };
-                const unit = (p.cassetto||"").toUpperCase().includes("OLIO") ? "Litri" : "Pezzi";
-                
                 card.innerHTML = `
-                    <div class="qty-container" style="color:${isLow ? 'var(--danger)':'var(--success)'}">
+                    <div class="qty-container" style="color:${isLow?'var(--danger)':'var(--success)'}">
                         <span class="qty-num">${Math.round(p.qty)}</span>
-                        <span class="qty-label">${unit}</span>
                     </div>
-                    <h4>${p.desc} ${p.img ? '<span class="cam-icon">📷</span>' : ''}</h4>
+                    <h4>${p.desc}</h4>
                     <div class="badge-code b-int">INT: ${p.cod_int || '---'}</div>
                     <div class="badge-code b-prod">PROD: ${p.cod_prod || '---'}</div>
                     <div class="pos-label">📦 POS: ${p.cassetto || '---'}</div>
                     <div class="actions">
-                        <button style="background:var(--primary)" onclick="event.stopPropagation(); movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico', '${p.isola}')">PRELEVA</button>
-                        <button style="background:var(--success)" onclick="event.stopPropagation(); movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'carico', '${p.isola}')">CARICA</button>
+                        <button style="background:var(--primary)" onclick="avviaMovimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico', '${p.isola}')">PRELEVA</button>
+                        <button style="background:var(--success)" onclick="avviaMovimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'carico', '${p.isola}')">CARICA</button>
                     </div>`;
                 content.appendChild(card);
             });
@@ -191,30 +194,51 @@
         }
     }
 
-    async function movimento(id, desc, attuale, tipo, isolaArticolo) {
+    // GESTIONE MOVIMENTO
+    function avviaMovimento(id, desc, attuale, tipo, isola) {
         const chi = prompt("OPERATORE:"); if (!chi) return;
-        const qtaVal = prompt("QUANTITÀ:"); if (!qtaVal) return;
-        const qta = parseInt(qtaVal); if (isNaN(qta)) return;
+        const qta = parseInt(prompt("QUANTITÀ:")); if (isNaN(qta)) return;
+        
+        movimentoCorrente = { id, desc, attuale, tipo, isola, chi, qta };
 
-        let macchinaDestinazione = "MAGAZZINO";
         if (tipo === 'scarico') {
-            let msg = "SELEZIONA MACCHINA (Inserisci il Numero):\n\n" + listaMacchine.map((m, i) => `${i + 1}. ${m}`).join("\n");
-            const scelta = prompt(msg);
-            const idx = parseInt(scelta) - 1;
-            macchinaDestinazione = listaMacchine[idx] || "GENERICO";
+            apriModalMacchina();
+        } else {
+            eseguiSalvataggio("MAGAZZINO");
         }
+    }
 
+    function apriModalMacchina() {
+        const cont = document.getElementById('lista-bottoni-macchine');
+        cont.innerHTML = "";
+        listaMacchine.forEach(m => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-macchina';
+            btn.innerText = m;
+            btn.onclick = () => eseguiSalvataggio(m);
+            cont.appendChild(btn);
+        });
+        document.getElementById('modal-macchine').style.display = 'flex';
+    }
+
+    function chiudiModalMacchina() { document.getElementById('modal-macchine').style.display = 'none'; }
+
+    async function eseguiSalvataggio(macchinaScelta) {
+        chiudiModalMacchina();
+        const { id, attuale, tipo, qta, chi, desc, isola } = movimentoCorrente;
         const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
+
         const { error } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
         if (!error) {
             await supabaseClient.from('log_movimenti').insert([{ 
                 operatore: chi.toUpperCase(), articolo: desc, quantita: tipo === 'scarico' ? -qta : qta, 
-                isola: isolaArticolo, macchina: macchinaDestinazione.toUpperCase() 
+                isola: isola, macchina: macchinaScelta.toUpperCase() 
             }]);
             inizializza();
         }
     }
 
+    // STORICO E FILTRI
     async function apriStorico() {
         const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(100);
         logLocali = data;
@@ -223,13 +247,12 @@
     }
 
     function mostraLog(dati) {
-        const lista = document.getElementById('lista-log');
-        lista.innerHTML = dati.map(l => `
+        document.getElementById('lista-log').innerHTML = dati.map(l => `
             <div class="log-item">
                 <strong>${l.operatore}</strong>: ${l.quantita > 0 ? '📥' : '📤'} ${Math.abs(l.quantita)} - ${l.articolo}<br>
                 <span class="destinazione-badge">📍 ${l.isola || '---'}</span> 
                 ${l.macchina ? `<span class="destinazione-badge" style="background:#e67e22">⚙️ ${l.macchina}</span>` : ''}
-                <br><small style="color:#888">${new Date(l.created_at).toLocaleString()}</small>
+                <br><small>${new Date(l.created_at).toLocaleString()}</small>
             </div>
         `).join('');
     }
@@ -242,16 +265,10 @@
     function filtraSottoscorta() { renderizza(datiLocali.filter(u => u.qty <= u.min)); }
     function filtraTesto() {
         const t = document.getElementById('cerca').value.toLowerCase().trim();
-        if (!t) { renderizza(); return; }
-        renderizza(datiLocali.filter(u => (u.desc+u.cod_int+u.cod_prod+u.isola).toLowerCase().includes(t)));
+        if(!t) { renderizza(); return; }
+        renderizza(datiLocali.filter(u => (u.desc+u.cod_int+u.cod_prod).toLowerCase().includes(t)));
     }
     function resetSearchAndFilter() { document.getElementById('cerca').value = ""; renderizza(); }
-    function apriFoto(url, titolo) {
-        if (!url) return;
-        document.getElementById('img-zoom').src = url;
-        document.getElementById('titolo-foto').innerText = titolo;
-        document.getElementById('modal-foto').style.display = 'flex';
-    }
 
     inizializza();
 </script>
