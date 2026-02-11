@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magazzino Multi-Isola v12</title>
+    <title>Magazzino Multi-Isola v13</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -16,7 +16,7 @@
         .sticky-header { position: sticky; top: 0; z-index: 100; background: var(--bg); padding-bottom: 10px; }
         .header { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        .isola-selector { width: 100%; padding: 15px; border-radius: 8px; border: 3px solid var(--dark); background: var(--dark); color: white; font-weight: bold; font-size: 18px; margin-bottom: 10px; appearance: none; text-align: center; }
+        .isola-selector { width: 100%; padding: 15px; border-radius: 8px; border: 3px solid var(--dark); background: var(--dark); color: white; font-weight: bold; font-size: 18px; margin-bottom: 10px; appearance: none; text-align: center; cursor: pointer; }
 
         input#cerca { width: 100%; padding: 15px; border: 2px solid var(--primary); border-radius: 8px; font-size: 18px; box-sizing: border-box; }
 
@@ -27,39 +27,39 @@
         .cassetto-header { background: #5d6d7e; color: white; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; }
         
         .cassetto-content { display: none; padding: 10px; background: #ecf0f1; }
-        .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        .cassetto-content.open { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 
         .card { 
             background: white; border-radius: 10px; padding: 15px; position: relative; 
             border-left: 8px solid var(--success); box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; min-height: 180px;
+            display: flex; flex-direction: column; min-height: 220px;
         }
         .card.sottoscorta { border-left-color: var(--danger); background: #fff5f5; }
         
         .qty-badge { position: absolute; top: 10px; right: 10px; text-align: right; }
-        .qty-num { font-size: 24px; font-weight: 900; display: block; line-height: 1; }
-        .qty-unit { font-size: 12px; font-weight: bold; }
+        .qty-num { font-size: 26px; font-weight: 900; display: block; line-height: 1; }
+        .qty-unit { font-size: 12px; font-weight: bold; text-transform: uppercase; }
 
-        .card h4 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--primary); cursor: pointer; line-height: 1.2; padding-right: 50px; }
+        .card h4 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--primary); cursor: pointer; line-height: 1.2; padding-right: 55px; text-transform: uppercase; }
         
         .codici-container { font-size: 0.85rem; margin-bottom: 10px; }
         .badge-int { background: #e8f4fd; color: #2980b9; padding: 4px 8px; border-radius: 5px; border: 1px solid #3498db; margin-bottom: 5px; display: inline-block; font-weight: bold; }
         .badge-prod { background: #fdf2e9; color: #d35400; padding: 4px 8px; border-radius: 5px; border: 1px solid #e67e22; display: inline-block; font-weight: bold; }
 
-        .actions { display: flex; gap: 8px; margin-top: auto; }
-        .actions button { flex: 1; padding: 15px 5px; border: none; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+        .pos-label { font-size: 0.85rem; font-weight: bold; color: #7f8c8d; margin-top: auto; margin-bottom: 12px; padding-top: 5px; border-top: 1px solid #eee; }
+
+        .actions { display: flex; gap: 8px; }
+        .actions button { flex: 1; padding: 15px 5px; border: none; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; text-transform: uppercase; cursor: pointer; }
         .btn-preleva { background: var(--primary); }
         .btn-carica { background: var(--success); }
 
-        /* SEZIONE STORICO INGRANDITA */
-        #sezione-storico { display: none; background: white; margin-top: 10px; padding: 20px; border-radius: 12px; border: 3px solid var(--dark); max-height: 450px; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .log-header { display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid var(--dark); margin-bottom: 15px; padding-bottom: 10px; }
-        .log-item { font-size: 1.1rem; padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
-        .log-data { color: #7f8c8d; font-size: 0.8rem; display: block; }
+        #sezione-storico { display: none; position: fixed; top: 5%; left: 5%; width: 90%; height: 85%; background: white; z-index: 2000; padding: 20px; border-radius: 12px; border: 3px solid var(--dark); overflow-y: auto; box-shadow: 0 10px 50px rgba(0,0,0,0.5); }
+        .log-header { display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid var(--dark); margin-bottom: 15px; padding-bottom: 10px; position: sticky; top: 0; background: white; }
+        .log-item { font-size: 1.1rem; padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
         .log-prelievo { color: var(--danger); font-weight: bold; }
         .log-carico { color: var(--success); font-weight: bold; }
 
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
+        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 15px; border-radius: 10px; max-width: 90%; text-align: center; }
         .modal-content img { max-width: 100%; max-height: 60vh; border-radius: 5px; }
     </style>
@@ -69,7 +69,6 @@
 <div class="sticky-header">
     <div class="header">
         <select id="select-isola" class="isola-selector" onchange="filtraIsola()">
-            <option value="olii">🛢️ MAGAZZINO OLII</option>
             <option value="okuma fori">🏝️ OKUMA FORI</option>
             <option value="okuma profili">🏝️ OKUMA PROFILI</option>
             <option value="puma / dmg">🏝️ PUMA / DMG</option>
@@ -85,12 +84,13 @@
             <option value="montaggio">🏝️ MONTAGGIO</option>
             <option value="elettroerosioni">🏝️ ELETTROEROSIONI</option>
             <option value="vtm100 / youji">🏝️ VTM100 / YOUJI</option>
+            <option value="olii">🛢️ MAGAZZINO OLII</option>
         </select>
         
         <input type="text" id="cerca" onkeyup="filtraTesto()" placeholder="Cerca descrizione o codici...">
         
         <div class="btn-toolbar">
-            <button onclick="caricaStorico()" style="background: var(--dark);">📜 STORICO LOG</button>
+            <button onclick="caricaStorico()" style="background: var(--dark);">📜 STORICO</button>
             <button onclick="filtraSottoscorta()" id="btnSotto">🚨 SOTTOSCORTA</button>
             <button onclick="inizializza()">🔄 AGGIORNA</button>
         </div>
@@ -100,7 +100,7 @@
 <div id="sezione-storico">
     <div class="log-header">
         <h2 style="margin:0;">Ultimi Movimenti</h2>
-        <button onclick="document.getElementById('sezione-storico').style.display='none'" style="padding:10px 20px; font-weight:bold; background:var(--danger); color:white; border:none; border-radius:5px;">CHIUDI</button>
+        <button onclick="document.getElementById('sezione-storico').style.display='none'" style="padding:15px 25px; font-weight:bold; background:var(--danger); color:white; border:none; border-radius:8px;">CHIUDI</button>
     </div>
     <div id="lista-log"></div>
 </div>
@@ -111,7 +111,7 @@
     <div class="modal-content" onclick="event.stopPropagation()">
         <h3 id="modalTitle" style="margin-top:0;"></h3>
         <img id="modalImg" src="">
-        <button onclick="document.getElementById('fotoModal').style.display='none'" style="width:100%; padding:15px; margin-top:10px; background:var(--dark); color:white; border:none; border-radius:5px; font-weight:bold;">CHIUDI</button>
+        <button onclick="document.getElementById('fotoModal').style.display='none'" style="width:100%; padding:15px; margin-top:10px; background:var(--dark); color:white; border:none; border-radius:8px; font-weight:bold;">CHIUDI</button>
     </div>
 </div>
 
@@ -149,7 +149,8 @@
 
         const gruppi = {};
         sorgente.forEach(u => {
-            const c = u.cassetto || "GENERALE";
+            const c = u.cassetto || "NON DEFINITO";
+            // Per gli olii non raggruppiamo per cassetto se preferisci, o manteniamo coerenza
             if (!gruppi[c]) gruppi[c] = [];
             gruppi[c].push(u);
         });
@@ -158,7 +159,7 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'cassetto-wrapper';
             wrapper.innerHTML = `<div class="cassetto-header" onclick="this.nextSibling.classList.toggle('open')">
-                <span>📍 ${nome}</span> <span>${prodotti.length} Articoli</span>
+                <span>📍 ${nome}</span> <span>${prodotti.length} Art.</span>
             </div>`;
             
             const content = document.createElement('div');
@@ -166,7 +167,7 @@
             
             prodotti.forEach(p => {
                 const isLow = p.qty <= p.min;
-                const unita = isolaSelezionata === 'olii' ? "Litri" : "Pz";
+                const unita = isolaSelezionata === 'olii' ? "L" : "Pz";
                 content.innerHTML += `
                     <div class="card ${isLow ? 'sottoscorta' : ''}">
                         <div class="qty-badge" style="color:${isLow ? 'var(--danger)':'var(--success)'}">
@@ -178,6 +179,11 @@
                             <div class="badge-int">INT: ${p.cod_int || '---'}</div><br>
                             <div class="badge-prod">PROD: ${p.cod_prod || '---'}</div>
                         </div>
+                        
+                        <div class="pos-label">
+                            📍 POS: <span style="color:var(--dark)">${p.cassetto || '---'}</span>
+                        </div>
+
                         <div class="actions">
                             <button class="btn-preleva" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'scarico')">PRELEVA</button>
                             <button class="btn-carica" onclick="movimento(${p.id}, '${p.desc.replace(/'/g, "\\'")}', ${p.qty}, 'carico')">CARICA</button>
@@ -190,14 +196,14 @@
     }
 
     async function movimento(id, desc, attuale, tipo) {
-        const chi = prompt("Chi sei?");
+        const chi = prompt("Operatore (Nome):");
         if (!chi) return;
-        const qtaStr = prompt("Quanti pezzi?");
+        const qtaStr = prompt("Quantità intera:");
         const qta = parseInt(qtaStr);
         if (isNaN(qta) || qta <= 0) return;
 
         const nuovaQty = tipo === 'scarico' ? attuale - qta : attuale + qta;
-        if (nuovaQty < 0) return alert("Errore: Giacenza troppo bassa!");
+        if (nuovaQty < 0) return alert("Errore: Giacenza insufficiente!");
 
         const { error } = await supabaseClient.from('utensili').update({ qty: nuovaQty }).eq('id', id);
         if (!error) {
@@ -209,20 +215,20 @@
     }
 
     async function caricaStorico() {
-        const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(25);
+        const { data } = await supabaseClient.from('log_movimenti').select('*').order('created_at', { ascending: false }).limit(30);
         document.getElementById('lista-log').innerHTML = data.map(l => {
             const classeMov = l.quantita > 0 ? 'log-carico' : 'log-prelievo';
             const segno = l.quantita > 0 ? '📥 CARICO' : '📤 PRELIEVO';
             return `
                 <div class="log-item">
                     <div>
-                        <span class="log-data">${new Date(l.created_at).toLocaleString()}</span>
-                        <strong>${l.operatore}</strong> [${l.isola || '?'}]
-                        <div style="margin-top:5px;">${l.articolo}</div>
+                        <small style="color:#7f8c8d">${new Date(l.created_at).toLocaleString()}</small><br>
+                        <strong>${l.operatore}</strong> <span style="font-size:0.8rem; background:#eee; padding:2px 5px; border-radius:3px;">${l.isola || '?'}</span>
+                        <div style="margin-top:5px; font-weight:bold; color:var(--primary)">${l.articolo}</div>
                     </div>
-                    <div class="${classeMov}" style="font-size: 1.2rem;">
+                    <div class="${classeMov}" style="text-align:right">
                         ${segno}<br>
-                        ${Math.abs(l.quantita)} ${isolaSelezionata === 'olii' ? 'L' : 'Pz'}
+                        <span style="font-size:1.4rem">${Math.abs(l.quantita)}</span>
                     </div>
                 </div>
             `;
@@ -249,6 +255,13 @@
         } else {
             renderizza();
         }
+    }
+
+    function mostraFoto(titolo, url) {
+        if (!url || url === 'null' || url === '') return alert("Nessuna foto disponibile");
+        document.getElementById('modalTitle').innerText = titolo;
+        document.getElementById('modalImg').src = url;
+        document.getElementById('fotoModal').style.display = 'flex';
     }
 
     inizializza();
